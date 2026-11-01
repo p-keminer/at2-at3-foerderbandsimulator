@@ -251,7 +251,10 @@ namespace Plant.Wpf
             {
                 if (!process.Start()) throw new InvalidOperationException("LiveProbe-Prozess konnte nicht gestartet werden.");
                 started = true;
-                lock (gate) commandWriter = process.StandardInput;
+                // Send commands as UTF-8 regardless of the host console's code page.
+                // .NET Framework may already emit a UTF-8 BOM when opening StandardInput;
+                // the receiver accepts that initial preamble. Process disposal owns the pipe.
+                lock (gate) commandWriter = new StreamWriter(process.StandardInput.BaseStream, new UTF8Encoding(false));
                 _ = process.Handle; // Keep the owned process handle even if a fast child already exited.
                 stdout = Pump(process.StandardOutput, request.ReportPath + ".stdout.txt", true, ownerGeneration);
                 stderr = Pump(process.StandardError, request.ReportPath + ".stderr.txt", false, ownerGeneration);

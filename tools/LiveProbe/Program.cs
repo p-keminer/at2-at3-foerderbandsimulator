@@ -71,8 +71,10 @@ internal static class Program
         {
             try
             {
+                // .NET Framework's redirected stdin may start with a UTF-8 BOM.
+                using var input = new StreamReader(Console.OpenStandardInput(), new UTF8Encoding(false, true), true);
                 string? line;
-                while ((line = Console.ReadLine()) != null)
+                while ((line = input.ReadLine()) != null)
                 {
                     control.Accept(line);
                     if (control.StopRequested) break;

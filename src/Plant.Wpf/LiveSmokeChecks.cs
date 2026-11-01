@@ -28,6 +28,7 @@ using System.Threading;
 using System.Collections.Generic;
 using System.Web.Script.Serialization;
 internal static class Fixture {
+  static readonly TextReader input=new StreamReader(Console.OpenStandardInput(),new UTF8Encoding(false,true),true);
   static string Value(string[] args, string name) { int i=Array.IndexOf(args,name); return i<0?"":args[i+1]; }
   static void Sample(int n) {
     Console.WriteLine("SAMPLE {\"SchemaVersion\":2,\"Sequence\":"+n+",\"TimeNs\":"+((n-1)*1000000L)+",\"Position\":"+(50+n)+",\"Length\":120,\"MotorMm\":"+n+",\"BeltMm\":"+n+",\"MotorVelocity\":100,\"ObjectVelocity\":100,\"Present\":true,\"LeftIdeal\":true,\"LeftDetected\":true,\"Left\":true,\"Optical\":false,\"Right\":false,\"Hall\":true,\"MotorRight\":true,\"MotorLeft\":false,\"LampGreen\":true,\"LampYellow\":true,\"LampRed\":true,\"GeneratedRisingEdges\":"+n+"}");
@@ -46,7 +47,7 @@ internal static class Fixture {
     int sequence=1; bool present=true; double position=850;
     WorkpieceSample(sequence,present,position,false,null);
     string line;
-    while((line=Console.ReadLine())!=null && line!="STOP") {
+    while((line=input.ReadLine())!=null && line!="STOP") {
       if(kind=="workpiece-timeout") continue;
       var command = new JavaScriptSerializer().Deserialize<Dictionary<string,object>>(line.Substring(10));
       bool rejected=kind=="workpiece-reject";
@@ -66,7 +67,7 @@ internal static class Fixture {
     else {
       Sample(1);
       if(kind=="hang") Thread.Sleep(Timeout.Infinite);
-      if(cancel) Console.ReadLine();
+      if(cancel) input.ReadLine();
       else { Sample(kind=="bad-sequence"?3:2); Thread.Sleep(700); }
     }
     Console.WriteLine(kind=="malformed-final"?"FINALIZING {}":"FINALIZING"); Console.Out.Flush();

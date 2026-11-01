@@ -3,6 +3,7 @@ using System.CodeDom.Compiler;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CSharp;
 using Plant.Adapter;
@@ -17,6 +18,7 @@ internal static partial class Program
         {
             string folder = Path.Combine(Path.GetTempPath(), "AT2AT3-SiemensFree-Interactive-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(folder); var host = new LiveProcessHost();
+            var previousInputEncoding = Console.InputEncoding;
             const string source = """
 using System;
 using System.Collections.Generic;
@@ -36,8 +38,9 @@ internal static class InteractiveFixture {
     Console.OutputEncoding=new UTF8Encoding(false);
     Console.WriteLine("SIEMENS_FREE_INTERACTIVE_PROTOCOL_FIXTURE");
     var input=new Thread(()=>{
+      var reader=new StreamReader(Console.OpenStandardInput(),new UTF8Encoding(false,true),true);
       string line;
-      while((line=Console.ReadLine())!=null) {
+      while((line=reader.ReadLine())!=null) {
         if(line=="STOP") { stopped=true; return; }
         if(line=="PING") { Interlocked.Increment(ref pings); continue; }
         lock(gate) pending=new JavaScriptSerializer().Deserialize<Dictionary<string,object>>(line.Substring(10));
@@ -73,6 +76,9 @@ internal static class InteractiveFixture {
 """;
             try
             {
+                // Reproduce the UTF-8 console used by Windows CI. A BOM must not
+                // turn the first PING/WORKPIECE command into an unknown message.
+                Console.InputEncoding = new UTF8Encoding(true);
                 string exe = Path.Combine(folder, "AT2AT3.V5.LiveProbe.exe");
                 using (var compiler = new CSharpCodeProvider())
                 {
@@ -114,6 +120,7 @@ internal static class InteractiveFixture {
             }
             finally
             {
+                Console.InputEncoding = previousInputEncoding;
                 if (host.Snapshot.IsActive) await host.StopAsync();
                 foreach (string file in Directory.GetFiles(folder)) File.Delete(file);
                 Directory.Delete(folder);
