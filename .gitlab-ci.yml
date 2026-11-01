@@ -2,12 +2,15 @@ stages:
   - verify
 default:
   tags:
-    - saas-windows-medium-amd64
+    - $WINDOWS_RUNNER_TAG
 variables:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
   DOTNET_NOLOGO: "1"
 workflow:
   rules:
+    # THGA: erst nach Auswahl eines verfügbaren Windows-x64-Runners aktivieren.
+    - if: '$WINDOWS_RUNNER_TAG == null || $WINDOWS_RUNNER_TAG == ""'
+      when: never
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
       when: never

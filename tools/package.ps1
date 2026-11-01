@@ -11,11 +11,10 @@ foreach ($file in $required) { Copy-Item -LiteralPath (Join-Path $binaryRoot $fi
 foreach ($config in Get-ChildItem -LiteralPath (Join-Path $projectRoot 'config') -Filter '*.json' -File | Where-Object { $_.Name -notlike '*.local.json' }) {
     Copy-Item -LiteralPath $config.FullName -Destination (Join-Path $destinationPath ('config\'+$config.Name))
 }
-foreach ($file in @('README.md','THIRD_PARTY_NOTICES.md')) {
+foreach ($file in @('README.md','DOKUMENTATION.md','ROADMAP.md','CHANGELOG.md','AGENTS.md','THIRD_PARTY_NOTICES.md','LICENSE')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination $destinationPath
 }
 Copy-Item -LiteralPath (Join-Path $projectRoot 'docs') -Destination (Join-Path $destinationPath 'docs') -Recurse
-if (Test-Path -LiteralPath (Join-Path $projectRoot 'LICENSE')) { Copy-Item -LiteralPath (Join-Path $projectRoot 'LICENSE') -Destination $destinationPath }
 $licenseSource = Join-Path $projectRoot 'licenses'
 if (Test-Path -LiteralPath $licenseSource) { Copy-Item -LiteralPath $licenseSource -Destination (Join-Path $destinationPath 'licenses') -Recurse }
 $zip = $destinationPath + '.zip'
