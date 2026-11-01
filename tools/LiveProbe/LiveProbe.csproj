@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><AssemblyName>AT2AT3.V5.LiveProbe</AssemblyName></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../src/Plant.Siemens.V5/Plant.Siemens.V5.csproj" /></ItemGroup>
+</Project>

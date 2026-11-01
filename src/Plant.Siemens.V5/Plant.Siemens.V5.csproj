@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <SiemensV5ApiPath Condition="'$(SiemensV5ApiPath)' == ''">C:\Program Files (x86)\Common Files\Siemens\PLCSIMADV\API\5.0\Siemens.Simatic.Simulation.Runtime.Api.x64.dll</SiemensV5ApiPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Plant.Core/Plant.Core.csproj" />
+    <ProjectReference Include="../Plant.Adapter/Plant.Adapter.csproj" />
+    <Reference Include="Siemens.Simatic.Simulation.Runtime.Api.x64"><HintPath>$(SiemensV5ApiPath)</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+  <Target Name="RequireLocalSdk" BeforeTargets="ResolveReferences" Condition="!Exists('$(SiemensV5ApiPath)')">
+    <Error Text="Optionales Siemens-V5-SDK fehlt. Offline-Solution unabhängig mit build.ps1 bauen." />
+  </Target>
+</Project>

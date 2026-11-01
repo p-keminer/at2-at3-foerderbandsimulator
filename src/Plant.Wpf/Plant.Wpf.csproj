@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>WinExe</OutputType><UseWPF>true</UseWPF><AssemblyName>AT2AT3.Simulator</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System.Web.Extensions" />
+    <ProjectReference Include="../Plant.Core/Plant.Core.csproj" />
+    <ProjectReference Include="../Plant.Adapter/Plant.Adapter.csproj" />
+    <None Include="../../config/*.json" Link="config/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

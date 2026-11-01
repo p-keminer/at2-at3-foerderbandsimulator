@@ -1,0 +1,48 @@
+name: Windows offline build and tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: offline-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  offline:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+        with:
+          global-json-file: global.json
+      - name: Check public source contents
+        run: ./tools/check-public-content.ps1
+      - name: Build, core tests and Siemens-free WPF smoke
+        run: ./build.ps1 -Test -UiSmoke -EvidenceDirectory artifacts/ci
+      - name: Bounded process watchdog regression
+        run: ./tools/test-probe-watchdog.ps1 -Evidence artifacts/ci/watchdog.json
+      - name: Package offline application
+        run: ./tools/package.ps1
+      - name: Upload test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: windows-test-evidence
+          path: artifacts/ci/
+          retention-days: 14
+      - name: Upload Windows download
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: AT2AT3-Windows-x64-offline
+          path: |
+            output/AT2AT3-Offline.zip
+            output/AT2AT3-Offline.zip.sha256
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><AssemblyName>Plant.Tests</AssemblyName></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../src/Plant.Core/Plant.Core.csproj" /><ProjectReference Include="../src/Plant.Adapter/Plant.Adapter.csproj" /><Reference Include="System.Xml.Linq" /><Reference Include="System.Web.Extensions" /></ItemGroup>
+  <ItemGroup><Compile Include="../tools/LiveProbe/ProbeArguments.cs" Link="ProbeArguments.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../src/Plant.Siemens.V5/RuntimeEventPolicy.cs" Link="RuntimeEventPolicy.cs" /></ItemGroup>
+</Project>

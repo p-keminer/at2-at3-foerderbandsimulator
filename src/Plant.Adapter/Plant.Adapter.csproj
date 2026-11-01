@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><ProjectReference Include="../Plant.Core/Plant.Core.csproj" /></ItemGroup>
+</Project>

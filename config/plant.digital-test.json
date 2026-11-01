@@ -1,0 +1,25 @@
+{
+  "SchemaVersion": 1,
+  "ProfileId": "DIGITALER TESTSTAND – Hallteilung 1,2 mm; keine Laborkalibrierung",
+  "BeltLengthMm": 1000,
+  "InitialLeftMm": 50,
+  "WorkpieceLengthMm": 120,
+  "Metallic": true,
+  "Reflective": true,
+  "SpeedAt10V": 100,
+  "DynamicMotor": false,
+  "Acceleration": 200,
+  "Deceleration": 400,
+  "MinimumVoltage": 0,
+  "HallPitchMm": 1.2,
+  "HallInitialPhase": 0,
+  "ModelStepUs": 1000,
+  "ControllerSampleUs": 1000,
+  "Seed": 1632026,
+  "CalibrationMmPerPulse": null,
+  "Sensors": [
+    { "Id": "left", "PositionMm": 100, "ZoneMm": 0, "HysteresisMm": 0, "DelayUs": 0, "ActiveHigh": true },
+    { "Id": "optical", "PositionMm": 500, "ZoneMm": 0, "HysteresisMm": 0, "DelayUs": 0, "ActiveHigh": true },
+    { "Id": "right", "PositionMm": 900, "ZoneMm": 0, "HysteresisMm": 0, "DelayUs": 0, "ActiveHigh": true }
+  ]
+}
