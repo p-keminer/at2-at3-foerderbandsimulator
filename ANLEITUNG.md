@@ -611,7 +611,7 @@ pipeline run is therefore still outstanding.
 
 [![README](https://img.shields.io/badge/README-24292f?style=for-the-badge)](README.md#english)
 [![License](https://img.shields.io/badge/License-24292f?style=for-the-badge)](LICENSE)
-[![Third-party licenses](https://img.shields.io/badge/Third-party_licenses-24292f?style=for-the-badge)](THIRD_PARTY_LICENSES.md)
+[![Third-party licenses](https://img.shields.io/badge/Third--party_licenses-24292f?style=for-the-badge)](THIRD_PARTY_LICENSES.md)
 [![⬆ Back to top](https://img.shields.io/badge/%E2%AC%86_Back_to_top-24292f?style=for-the-badge)](#top)
 
 </div>
