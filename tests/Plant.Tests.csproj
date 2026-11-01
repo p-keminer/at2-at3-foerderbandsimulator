@@ -3,4 +3,9 @@
   <ItemGroup><ProjectReference Include="../src/Plant.Core/Plant.Core.csproj" /><ProjectReference Include="../src/Plant.Adapter/Plant.Adapter.csproj" /><Reference Include="System.Xml.Linq" /><Reference Include="System.Web.Extensions" /></ItemGroup>
   <ItemGroup><Compile Include="../tools/LiveProbe/ProbeArguments.cs" Link="ProbeArguments.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../src/Plant.Siemens.V5/RuntimeEventPolicy.cs" Link="RuntimeEventPolicy.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../src/Plant.Wpf/LiveProcessHost.cs" Link="LiveProcessHost.cs" /><Reference Include="Microsoft.CSharp" /></ItemGroup>
+  <ItemGroup><Compile Include="../src/Plant.Wpf/LiveStatusText.cs" Link="LiveStatusText.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../src/Plant.Wpf/LiveSessionPolicy.cs" Link="LiveSessionPolicy.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../src/Plant.Wpf/DefaultRecoveryReport.cs" Link="DefaultRecoveryReport.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../src/Plant.Wpf/CpuStatusIndicator.cs" Link="CpuStatusIndicator.cs" /></ItemGroup>
 </Project>

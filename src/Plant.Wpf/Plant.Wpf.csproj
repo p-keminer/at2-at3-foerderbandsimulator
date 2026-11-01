@@ -4,6 +4,6 @@
     <Reference Include="System.Web.Extensions" />
     <ProjectReference Include="../Plant.Core/Plant.Core.csproj" />
     <ProjectReference Include="../Plant.Adapter/Plant.Adapter.csproj" />
-    <None Include="../../config/*.json" Link="config/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../config/**/*.json" Link="config/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

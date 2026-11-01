@@ -95,6 +95,7 @@ namespace Plant.Siemens.V5
                 {
                     // Nominal is solely the model's internal scaling. It is NOT a PLC analogue read.
                     return new(ReadOutputBit("MotorRight"), ReadOutputBit("MotorLeft"), Analog.Nominal,
+                        LampRed: ReadOutputBit("LampRed"), LampYellow: ReadOutputBit("LampYellow"),
                         LampGreen: ReadOutputBit("LampGreen"), Sequence: grantSequence, TimeUs: grantTime);
                 }
                 var speed = Binding("SpeedCommandRaw");

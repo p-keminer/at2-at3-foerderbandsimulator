@@ -31,3 +31,9 @@ text/
 *.msi
 *.zip
 *.7z
+# Selected, verified native teaching projects (not arbitrary lab files).
+!tia/AT2_Start_Uebung_Originalstand.zap18
+!tia/AT3_Start_Uebung_Originalstand.zap18
+!tia/AT2_AT3_Referenzprojekt.zip
+# Portable personal settings stay on the user's machine.
+/profiles/

@@ -63,7 +63,7 @@ namespace Plant.Wpf
             { labels.Clear(); labelScale = scale; labelPixelsPerDip = pixelsPerDip; }
             dc.PushTransform(new ScaleTransform(scale, scale));
             var p = (Snapshot ?? previewSnapshot!).Plant; double X(double mm) => 65 + mm / Configuration.BeltLengthMm * 850;
-            dc.DrawRectangle(Ui.Surface, null, new Rect(0, 0, 1080, 340));
+            dc.DrawRectangle(Ui.Surface, null, new Rect(0, 0, 1080, scale < .8 ? 386 : 340));
             Label(dc, preview ? "ANLAGE  /  Vorschau · keine SPS-Werte" : "ANLAGE  /  technische Draufsicht", 30, 12, 15);
             bool compact = scale < .8;
             if (compact) dc.PushTransform(new TranslateTransform(0, 46));
@@ -102,13 +102,13 @@ namespace Plant.Wpf
             }
             Label(dc, compact ? "Beispiel [mm]" : "mm · Beispielgeometrie", 70, 270, 12);
             dc.DrawRoundedRectangle(Roller, Outline, new Rect(872, 277, 68, 35), 4, 4);
-            Label(dc, "M + Hall", 878, 285, 12, Ui.Surface);
+            Label(dc, "M + Hall", 878, 285, compact ? 10 : 12, Ui.Surface);
             bool[] lamps = { p.Actuators.LampRed, p.Actuators.LampYellow, p.Actuators.LampGreen };
             for (int i = 0; i < 3; i++)
             {
                 double y = 112 + i * 53;
                 dc.DrawEllipse(!preview && lamps[i] ? LampColors[i] : LampOff, Outline, new Point(985, y), 14, 14);
-                bool unavailable = preview || (Snapshot!.Mode == OperationMode.ExternalPlc && (i < 2 || !p.Actuators.Valid));
+                bool unavailable = preview || (Snapshot!.Mode == OperationMode.ExternalPlc && !p.Actuators.Valid);
                 string label = scale < .8 ? (i == 0 ? "R" : i == 1 ? "Ge" : "Gr") + (unavailable ? " —" : lamps[i] ? " 1" : " 0") : LampNames[i] + (unavailable ? " —" : lamps[i] ? " EIN" : " AUS");
                 Label(dc, label, 1007, y - 9, scale < .8 ? 10 : 11);
             }

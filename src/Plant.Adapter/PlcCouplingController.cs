@@ -111,6 +111,9 @@ namespace Plant.Adapter
                     throw new InvalidOperationException("Richtungskonflikt: SPS befiehlt gleichzeitig rechts und links; keine weitere CPU-Fortschaltung.");
                 if (read.MeasuredLengthMm.HasValue && !Numbers.Finite(read.MeasuredLengthMm.Value)) throw new InvalidOperationException("Ungültige Controllertelemetrie.");
                 if (plant is IAdoptedOutputObserver observer) observer.AdoptOutputs(read.Actuators);
+                // Commands see the latest PLC output and actual residual movement, never a UI estimate.
+                if (plant is IInputBoundaryCommands commands) commands.ApplyPendingCommands(grant.Sequence);
+                RequireFresh();
                 SensorFrame inputs = plant.Inputs(grant.Sequence);
                 if (!inputs.Valid || inputs.TimeUs != ioGrant.TimeUs || inputs.Sequence != grant.Sequence)
                     throw new InvalidOperationException("Anlageneingänge passen nicht zum Synchronisationspunkt.");

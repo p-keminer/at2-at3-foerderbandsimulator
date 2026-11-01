@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Threading;
@@ -18,9 +18,11 @@ namespace Plant.Wpf
             try
             {
                 var config = Json.LoadProfile(profile);
-                var app = new Application(); var window = new MainWindow(config);
+                var app = new Application(); var window = new MainWindow(config, args.Length > 1 && (args[0] == "--smoke" || args[0] == "--profile-smoke") ? Path.Combine(Path.GetFullPath(args[1]), "test-profiles") : null);
                 if (args.Length > 0 && args[0] == "--smoke")
                     window.ContentRendered += (_, _) => SmokeChecks.Start(window, args.Length > 1 ? args[1] : "ui-evidence");
+                if (args.Length > 1 && args[0] == "--profile-smoke")
+                    window.ContentRendered += (_, _) => SmokeChecks.StartProfiles(window, args[1]);
                 app.Run(window); return SmokeChecks.Failed ? 1 : 0;
             }
             catch (Exception e)

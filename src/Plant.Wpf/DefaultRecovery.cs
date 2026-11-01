@@ -17,18 +17,33 @@ namespace Plant.Wpf
         private readonly DefaultRecoveryHost defaultRecovery = new();
         private readonly Dictionary<string, Task<bool>> automaticRecoveries = new(StringComparer.OrdinalIgnoreCase);
         private TextBlock? defaultRecoveryStatus;
+        private readonly CpuStatusIndicator cpuIndicator = new();
+        private TextBlock? cpuBadgeText;
+        private Border? cpuBadge;
         internal Button? DefaultRecoveryAction;
         // Unconfirmed termination also blocks a competing connection until application restart.
         internal bool RecoveryBusy => defaultRecovery.IsActive || defaultRecovery.TerminationUnconfirmed;
         internal bool RecoveryRunning => defaultRecovery.IsActive;
 
+        private FrameworkElement BuildCpuStatusBadge()
+        {
+            cpuBadgeText = Ui.Text("CPU-Zustand nicht bestätigt", 13, true);
+            cpuBadgeText.Margin = new Thickness(0);
+            cpuBadgeText.TextWrapping = TextWrapping.NoWrap; cpuBadgeText.TextTrimming = TextTrimming.CharacterEllipsis;
+            cpuBadge = new Border { Child = cpuBadgeText, Padding = new Thickness(10, 6, 10, 6),
+                CornerRadius = new CornerRadius(4), Margin = new Thickness(0, 0, 0, 8),
+                ToolTip = "Letzte bestätigte CPU-Rückmeldung mit Uhrzeit. Änderungen außerhalb des Simulators werden erst beim nächsten SPS-Austausch oder einer Rückstellung erkannt." };
+            return cpuBadge;
+        }
+
         private FrameworkElement BuildDefaultRecoveryPanel()
         {
             var panel = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
             var details = new StackPanel();
-            details.Children.Add(Ui.Text("Nach einem eigenen, sauber getrennten Lauf wird AT2_Kopplung automatisch auf Default zurückgestellt. Die CPU kann dann fortlaufend arbeiten. Einen bereits vorhandenen Freeze kannst du hier freigeben.", 12));
-            DefaultRecoveryAction = Ui.Button("AT2_Kopplung jetzt auf Default freigeben", RestoreDefaultManually);
-            details.Children.Add(DefaultRecoveryAction);
+            details.Children.Add(Ui.Text("Nach einer eigenen, sauber getrennten Sitzung wird die ausgewählte CPU automatisch auf Default zurückgestellt, auch wenn die CPU währenddessen auf STOP wechselte. Für einen zurückgebliebenen Freeze gibt es oben den Button „CPU auf Default zurückstellen“.", 12));
+            DefaultRecoveryAction = Ui.Button("CPU auf Default zurückstellen", RestoreDefaultManually);
+            // This action is placed in the main toolbar, outside the collapsed details.
+            details.Children.Add(Ui.Text("Default beendet die externe Synchronisierung. Eine eingefrorene laufende CPU arbeitet wieder weiter; eine CPU in STOP bleibt in STOP.", 12));
             details.Children.Add(Ui.Text("Kein CPU-Start, kein RUN/STOP, kein automatischer neuer Förderbandlauf.", 12));
             panel.Children.Add(new Expander { Header = "CPU-Freigabe / Wiederherstellung", Content = details, IsExpanded = false });
             defaultRecoveryStatus = Ui.Text("Automatische Default-Freigabe nach eigenen Läufen aktiv.", 12);
@@ -39,7 +54,23 @@ namespace Plant.Wpf
         private void RefreshDefaultRecoveryControls()
         {
             if (DefaultRecoveryAction == null) return;
-            DefaultRecoveryAction.IsEnabled = !RecoveryBusy && !liveWorkflowBusy && !liveHost.Snapshot.IsActive && Host.Read(s => s.Paused);
+            DefaultRecoveryAction.Visibility = IsExternal ? Visibility.Visible : Visibility.Collapsed;
+            DefaultRecoveryAction.IsEnabled = selectedProfile != null && selectedProfile.Map.LocalVirtualInstanceConfirmed && !string.IsNullOrWhiteSpace(selectedProfile.Map.InstanceName) && !RecoveryBusy && !liveWorkflowBusy && !liveHost.Snapshot.IsActive && Host.Read(s => s.Paused);
+            DefaultRecoveryAction.ToolTip = DefaultRecoveryAction.IsEnabled
+                ? "Ausgewählte CPU aus SingleStep/Freeze freigeben. STOP bleibt STOP. Kein RUN-/STOP-Befehl."
+                : "Zuerst die SPS-Verbindung trennen und den Simulator pausieren; laufenden Abschluss abwarten.";
+            var connection = liveHost.Snapshot;
+            var badge = cpuIndicator.Describe(connection, RecoveryRunning, DateTime.Now);
+            if (cpuBadge != null && cpuBadgeText != null)
+            {
+                cpuBadge.Visibility = IsExternal ? Visibility.Visible : Visibility.Collapsed;
+                cpuBadgeText.Text = badge.Text; cpuBadgeText.ToolTip = badge.Text;
+                if (cpuBadge.Tag as string != badge.Background)
+                { cpuBadge.Background = Ui.Brush(badge.Background); cpuBadgeText.Foreground = Ui.Brush(badge.Foreground); cpuBadge.Tag = badge.Background; }
+            }
+            if (defaultRecoveryStatus != null && connection.IsActive)
+                defaultRecoveryStatus.Text = connection.Latest == null ? "CPU-Verbindung wird aufgebaut; Zustand noch nicht bestätigt."
+                    : "CPU wird für den E/A-Austausch synchronisiert. Default-Freigabe erfolgt beim Trennen.";
         }
 
         private static string FindRestoreDefault(string root)
@@ -52,10 +83,7 @@ namespace Plant.Wpf
                 "RestoreDefault-Hilfsprogramm fehlt. tools/RestoreDefault/RestoreDefault.csproj zuerst kompilieren.");
         }
 
-        internal static bool CanRestoreAfterRun(LiveProcessSnapshot run) =>
-            run.State == LiveProcessState.Completed && !run.IsActive && run.Latest != null && run.Latest.Sequence > 0 &&
-            run.CleanupConfirmed && !run.HardKilled && (run.ExitCode == 0 || run.ExitCode == 1) &&
-            run.CpuBeforeDisconnect == "Freeze / SingleStep_C" && !string.IsNullOrWhiteSpace(run.ReportPath);
+        internal static bool CanRestoreAfterRun(LiveProcessSnapshot run) => LiveSessionPolicy.CanRestoreOwnFreeze(run);
 
         internal Task<bool> RestoreDefaultAfterRunAsync(LiveProcessSnapshot run)
         {
@@ -65,7 +93,7 @@ namespace Plant.Wpf
             // attempt. Never let a duplicate caller close while the owned child is running.
             if (automaticRecoveries.TryGetValue(run.ReportPath, out var existing)) return existing;
             if (!CanRestoreAfterRun(run) || RecoveryBusy || liveHost.Snapshot.IsActive) return Task.FromResult(false);
-            var recovery = RunDefaultRecoveryAsync(true);
+            var recovery = RunDefaultRecoveryAsync(true, run);
             automaticRecoveries.Add(run.ReportPath, recovery);
             return recovery;
         }
@@ -76,25 +104,31 @@ namespace Plant.Wpf
             await RunDefaultRecoveryAsync(false);
         }
 
-        private async Task<bool> RunDefaultRecoveryAsync(bool automatic)
+        private async Task<bool> RunDefaultRecoveryAsync(bool automatic, LiveProcessSnapshot? completedRun = null)
         {
             try
             {
                 string root = FindProjectDirectory();
                 string report = Path.Combine(root, "artifacts", "wpf-default", DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 8) + ".json");
-                var task = defaultRecovery.RunAsync(FindRestoreDefault(root), root, report, true, true, automatic);
+                string instance = (automatic ? liveMap?.InstanceName : selectedProfile.Map.InstanceName) ?? "";
+                Numbers.Require(!string.IsNullOrWhiteSpace(instance) && (automatic || selectedProfile.Map.LocalVirtualInstanceConfirmed), "Lokale CPU zuerst im Profil auswählen und bestätigen.");
+                var task = defaultRecovery.RunAsync(FindRestoreDefault(root), root, report, true, true, automatic, instance);
                 if (defaultRecoveryStatus != null) defaultRecoveryStatus.Text = (automatic ? "Eigener Lauf beendet. " : "Manuell angefordert. ") + "Default-Freigabe läuft · maximal 10 Sekunden plus Prozessabschluss…";
                 Refresh();
                 var result = await task;
+                cpuIndicator.RecoveryFinished(result.Passed ? result.CpuState : null, DateTime.Now);
                 string detail = result.Passed
-                    ? "CPU: Run / Default bestätigt. Bereit für den nächsten Lauf."
+                    ? result.CpuState == "Stop" ? "CPU: STOP / Default bestätigt. Jetzt in TIA oder PLCSIM RUN wählen."
+                        : "CPU: Run / Default bestätigt. Bereit für die nächste Verbindung."
                     : "Default-Freigabe nicht bestätigt: " + result.Error;
                 if (defaultRecoveryStatus != null) { defaultRecoveryStatus.Text = detail; defaultRecoveryStatus.ToolTip = "Separater Abschlussbericht: " + report; }
-                SetStatus(detail, !result.Passed);
+                SetStatus(completedRun == null ? detail : LiveStatusText.AfterRecovery(completedRun, detail),
+                    !result.Passed || completedRun?.State == LiveProcessState.Faulted);
                 return result.Passed;
             }
             catch (Exception e)
             {
+                cpuIndicator.RecoveryFinished(null, DateTime.Now);
                 if (defaultRecoveryStatus != null) defaultRecoveryStatus.Text = "Freigabe nicht ausgeführt: " + e.Message;
                 SetStatus("Default-Freigabe nicht ausgeführt oder unbestätigt: " + e.Message, true);
                 return false;
@@ -104,7 +138,7 @@ namespace Plant.Wpf
     }
 
     internal sealed record DefaultRecoveryResult(bool Passed, bool ProcessExited, bool HardTimeout,
-        bool OutputCaptured, int? ExitCode, string ReportPath, string? Error);
+        bool OutputCaptured, int? ExitCode, string ReportPath, string? Error, string? CpuState = null);
 
     // The WPF process never loads Siemens code. This authorized operation invokes only the
     // existing fixed-instance maintenance executable; it does not weaken the live begin guard.
@@ -116,9 +150,10 @@ namespace Plant.Wpf
         public bool TerminationUnconfirmed { get { lock (gate) return terminationUnconfirmed; } }
 
         internal Task<DefaultRecoveryResult> RunAsync(string executable, string workingDirectory,
-            string reportPath, bool runtimeApproved, bool defaultApproved, bool automaticAfterOwnRun = false)
+            string reportPath, bool runtimeApproved, bool defaultApproved, bool automaticAfterOwnRun = false, string instanceName = "AT2_Kopplung")
         {
             Numbers.Require(runtimeApproved && defaultApproved, "Eigene Freigaben für Runtime und Default-Fortlauf fehlen.");
+            Numbers.Require(!string.IsNullOrWhiteSpace(instanceName) && instanceName.Length <= 128 && !instanceName.Any(char.IsControl), "CPU-Instanzname fehlt oder ist ungültig.");
             executable = Path.GetFullPath(executable); workingDirectory = Path.GetFullPath(workingDirectory); reportPath = Path.GetFullPath(reportPath);
             Numbers.Require(File.Exists(executable) && string.Equals(Path.GetFileName(executable), "AT2AT3.V5.RestoreDefault.exe", StringComparison.OrdinalIgnoreCase), "RestoreDefault-Hilfsprogramm fehlt.");
             Numbers.Require(Directory.Exists(workingDirectory), "Arbeitsordner fehlt.");
@@ -130,34 +165,26 @@ namespace Plant.Wpf
                 Numbers.Require(!active && !terminationUnconfirmed, "Default-Freigabe läuft bereits oder Ende des vorherigen Hilfsprozesses ist unbestätigt.");
                 active = true;
             }
-            return Task.Run(() => Execute(executable, workingDirectory, reportPath, automaticAfterOwnRun));
+            return Task.Run(() => Execute(executable, workingDirectory, reportPath, automaticAfterOwnRun, instanceName));
         }
 
         internal static bool ValidateReport(string text)
         {
-            var serializer = new JavaScriptSerializer { MaxJsonLength = 1024 * 1024 };
-            var data = serializer.DeserializeObject(text) as IDictionary<string, object>;
-            if (data == null) return false;
-            bool True(string key) => data.TryGetValue(key, out var value) && value is bool b && b;
-            bool Equal(string key, string expected) => data.TryGetValue(key, out var value) && value is string s && s == expected;
-            return True("passed") && True("cleanupConfirmed") && True("defaultAndRunObserved") &&
-                Equal("operation", "ExplicitRestoreDefault") && Equal("instance", "AT2_Kopplung") &&
-                Equal("observedName", "AT2_Kopplung") && Equal("afterMode", "Default") && Equal("afterState", "Run") &&
-                Equal("stage", "Completed") && Equal("sdkProductVersion", "5.0.0.2");
+            return DefaultRecoveryReport.ConfirmedState(text) != null;
         }
 
-        private DefaultRecoveryResult Execute(string executable, string workingDirectory, string reportPath, bool automaticAfterOwnRun)
+        private DefaultRecoveryResult Execute(string executable, string workingDirectory, string reportPath, bool automaticAfterOwnRun, string instanceName)
         {
             var info = new ProcessStartInfo {
                 FileName = executable, WorkingDirectory = workingDirectory,
-                Arguments = "--freigabe-runtime --freigabe-default-fortlauf --report " + LiveProcessHost.QuoteArgument(reportPath),
+                Arguments = "--freigabe-runtime --freigabe-default-fortlauf --report " + LiveProcessHost.QuoteArgument(reportPath) + " --instance " + LiveProcessHost.QuoteArgument(instanceName),
                 UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden,
                 RedirectStandardOutput = true, RedirectStandardError = true,
                 StandardOutputEncoding = new UTF8Encoding(false), StandardErrorEncoding = new UTF8Encoding(false)
             };
             using var process = new Process { StartInfo = info };
             bool started = false, ended = false, timeout = false, captured = false, passed = false;
-            int? exitCode = null; string? error = null; Task<string>? stdout = null, stderr = null;
+            int? exitCode = null; string? error = null, cpuState = null; Task<string>? stdout = null, stderr = null;
             var elapsed = Stopwatch.StartNew();
             try
             {
@@ -177,8 +204,9 @@ namespace Plant.Wpf
                 if (timeout || !ended || !captured || exitCode != 0)
                     throw new InvalidOperationException("Prozessende, Frist oder Exitcode bestätigt die Rückstellung nicht.");
                 var report = new FileInfo(reportPath);
-                if (!report.Exists || report.Length > 1024 * 1024 || !ValidateReport(File.ReadAllText(reportPath)))
-                    throw new InvalidOperationException("Abschlussbericht bestätigt Default/Run, Instanz und Cleanup nicht vollständig.");
+                if (!report.Exists || report.Length > 1024 * 1024 ||
+                    (cpuState = DefaultRecoveryReport.ConfirmedState(File.ReadAllText(reportPath), instanceName)) == null)
+                    throw new InvalidOperationException("Abschlussbericht bestätigt Default, CPU-Zustand, Instanz und Cleanup nicht vollständig.");
                 passed = true;
             }
             catch (Exception e) { error = e.Message; }
@@ -203,7 +231,7 @@ namespace Plant.Wpf
                 catch (Exception e) { passed = false; error = "Prozessprotokoll nicht vollständig gespeichert: " + e.Message; }
                 lock (gate) active = false;
             }
-            return new(passed, ended, timeout, captured, exitCode, reportPath, error);
+            return new(passed, ended, timeout, captured, exitCode, reportPath, error, cpuState);
         }
     }
 }

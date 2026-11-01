@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -14,7 +14,7 @@ using Plant.Core;
 
 internal static class Program
 {
-    private const string DefaultSdk = @"C:\Program Files (x86)\Common Files\Siemens\PLCSIMADV\API\5.0\Siemens.Simatic.Simulation.Runtime.Api.x64.dll";
+    private static readonly string DefaultSdk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFilesX86), @"Siemens\PLCSIMADV\API\5.0\Siemens.Simatic.Simulation.Runtime.Api.x64.dll");
     private static int Main(string[] args)
     {
         Console.OutputEncoding = new UTF8Encoding(false);
@@ -60,18 +60,33 @@ internal static class Program
         var limits = new DigitalRunLimits { MaxAdvances = int.Parse(command.Optional("--steps", "12"), CultureInfo.InvariantCulture),
             MaxVirtualSeconds = double.Parse(command.Optional("--max-virtual-seconds", "1"), CultureInfo.InvariantCulture),
             WallTimeoutSeconds = int.Parse(command.Optional("--wall-seconds", "15"), CultureInfo.InvariantCulture),
-            RequireStationary = !command.Has("--allow-movement"), RequireCompletedTransport = command.Has("--require-transport") };
+            RequireStationary = !command.Has("--allow-movement"), RequireCompletedTransport = command.Has("--require-transport"), InteractiveSession = command.Has("--interactive") };
         limits.Validate();
-        using var cancel = new CancellationTokenSource();
-        ConsoleCancelEventHandler onCancel = (_, e) => { e.Cancel = true; cancel.Cancel(); };
+        var workpieceCommands = command.Has("--stream") ? new WorkpieceCommandChannel() : null;
+        using var control = new InteractiveControlSession(workpieceCommands, limits.InteractiveSession);
+        ConsoleCancelEventHandler onCancel = (_, e) => { e.Cancel = true; control.RequestStop(); };
         Console.CancelKeyPress += onCancel;
-        // Optional WPF parent owns stdin: STOP or pipe closure cancels; no CPU mode switch.
-        if (command.Has("--stream")) _ = Task.Run(() => { Console.ReadLine(); try { cancel.Cancel(); } catch (ObjectDisposedException) { } });
+        // Only the owned WPF stream can submit bounded plant commands. EOF/STOP still cancels.
+        if (workpieceCommands != null) _ = Task.Run(() =>
+        {
+            try
+            {
+                string? line;
+                while ((line = Console.ReadLine()) != null)
+                {
+                    control.Accept(line);
+                    if (control.StopRequested) break;
+                }
+            }
+            catch (Exception e) { control.Fail(e.Message); Console.Error.WriteLine("Prüflings-Steuerkanal: " + e.Message); }
+            finally { control.EndInput(); }
+        });
         try
         {
             var result = await DigitalIntegrationRun.ExecuteAsync(new Plant.Siemens.V5.V5EndpointFactory(profile), map, profile,
-                configuration, limits, new(true, true), cancel.Token,
-                command.Has("--stream") ? sample => { Console.WriteLine("SAMPLE " + Json.Write(DigitalProgress.From(sample))); Console.Out.Flush(); } : null);
+                configuration, limits, new(true, true), control.Token,
+                command.Has("--stream") ? sample => { Console.WriteLine("SAMPLE " + Json.Write(DigitalProgress.From(sample))); Console.Out.Flush(); } : null,
+                workpieceCommands, () => control.Failure);
             // The run has ended and cleanup has been attempted. A large report can take
             // longer than the stream freshness deadline; the process deadline still applies.
             if (command.Has("--stream")) { Console.WriteLine("FINALIZING"); Console.Out.Flush(); }

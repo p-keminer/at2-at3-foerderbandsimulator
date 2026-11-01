@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "projects": [
+    {
+      "file": "AT2_Start_Uebung_Originalstand.zap18",
+      "kind": "TIA V18 archive",
+      "sha256": "4da4416e81eb63720d8642a51994d2306f1021702d694da74eae7665e9c1b291",
+      "bytes": 406245
+    },
+    {
+      "file": "AT3_Start_Uebung_Originalstand.zap18",
+      "kind": "TIA V18 archive",
+      "sha256": "8114c564f5a79ef9cbf5fd2beee85ea02b9f6bd396a0903323751356ac3e7393",
+      "bytes": 413823
+    },
+    {
+      "file": "AT2_AT3_Referenzprojekt.zip",
+      "kind": "ZIP of complete native project folder; extract then open ap18",
+      "sha256": "979b2bec765d4d7c781110897022072babaf36f246a632f8c4750113cb70115f",
+      "bytes": 8740824,
+      "files": 61
+    }
+  ]
+}

@@ -24,6 +24,7 @@ namespace Plant.Core
         public string ProfileId { get; set; } = "BEISPIEL – keine Laborkalibrierung";
         public double BeltLengthMm { get; set; } = 1000;
         public double InitialLeftMm { get; set; } = 50;
+        public bool InitialPresent { get; set; } = true;
         public double WorkpieceLengthMm { get; set; } = 120;
         public bool Metallic { get; set; } = true;
         public bool Reflective { get; set; } = true;

@@ -89,23 +89,23 @@
       "Area": "Output"
     },
     {
-      "BitOffset": null,
-      "AreaSizeBytes": 0,
+      "BitOffset": 4,
+      "AreaSizeBytes": 4,
       "Direction": "plc_to_plant",
-      "Confirmed": false,
+      "Confirmed": true,
       "Type": "BOOL",
-      "ByteOffset": null,
+      "ByteOffset": 0,
       "Symbol": null,
       "Id": "LampRed",
       "Area": "Output"
     },
     {
-      "BitOffset": null,
-      "AreaSizeBytes": 0,
+      "BitOffset": 3,
+      "AreaSizeBytes": 4,
       "Direction": "plc_to_plant",
-      "Confirmed": false,
+      "Confirmed": true,
       "Type": "BOOL",
-      "ByteOffset": null,
+      "ByteOffset": 0,
       "Symbol": null,
       "Id": "LampYellow",
       "Area": "Output"

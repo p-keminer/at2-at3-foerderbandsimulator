@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -14,21 +14,25 @@ using Siemens.Simatic.Simulation.Runtime;
 internal static class Program
 {
     internal const string InstanceName = "AT2_Kopplung";
-    private const string SdkPath = @"C:\Program Files (x86)\Common Files\Siemens\PLCSIMADV\API\5.0\Siemens.Simatic.Simulation.Runtime.Api.x64.dll";
-    internal static bool NeedsChange(string name, string state, string mode, bool defaultEvents)
+    private static readonly string SdkPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFilesX86), @"Siemens\PLCSIMADV\API\5.0\Siemens.Simatic.Simulation.Runtime.Api.x64.dll");
+    internal static bool NeedsChange(string name, string state, string mode, bool defaultEvents, string expectedInstance = InstanceName)
     {
-        if (name != InstanceName || (state != "Run" && state != "Freeze") || defaultEvents ||
+        if (string.IsNullOrWhiteSpace(expectedInstance) || name != expectedInstance || (state != "Run" && state != "Freeze" && state != "Stop") || defaultEvents ||
             (mode != "SingleStep_P" && mode != "SingleStep_C" && mode != "Default"))
             throw new InvalidOperationException("Abbruch: Instanz/Zustand/Modus entspricht nicht der freigegebenen Rueckstellung.");
         return mode != "Default";
     }
+    internal static bool IsRecovered(string initialState, string state, string mode) =>
+        mode == "Default" && state == (initialState == "Stop" ? "Stop" : "Run");
     private static string RequireArguments(string[] args)
     {
-        // Fixed instance and operation. No alternative CPU, SDK, mode or implicit approval.
-        if (args.Length != 4 || args[0] != "--freigabe-runtime" ||
+        // Explicit instance name, fixed operation. No discovery, CPU creation or implicit approval.
+        if ((args.Length != 4 && args.Length != 6) || args[0] != "--freigabe-runtime" ||
             args[1] != "--freigabe-default-fortlauf" || args[2] != "--report" ||
             string.IsNullOrWhiteSpace(args[3]) || args[3].StartsWith("--"))
             throw new ArgumentException("GESPERRT: --freigabe-runtime --freigabe-default-fortlauf --report <neue.json> erforderlich.");
+        if (args.Length == 6 && (args[4] != "--instance" || string.IsNullOrWhiteSpace(args[5]) || args[5].Length > 128 || args[5].Any(char.IsControl)))
+            throw new ArgumentException("Gültiger lokaler CPU-Instanzname erforderlich.");
         return Path.GetFullPath(args[3]);
     }
     private static int SelfTest()
@@ -41,8 +45,20 @@ internal static class Program
         Check(NeedsChange(InstanceName, "Run", "SingleStep_C", false));
         Check(NeedsChange(InstanceName, "Freeze", "SingleStep_C", false));
         Check(!NeedsChange(InstanceName, "Run", "Default", false));
+        Check(NeedsChange("AT3_Uebung", "Freeze", "SingleStep_C", false, "AT3_Uebung"));
+        Reject(() => NeedsChange("AT2_Kopplung", "Freeze", "SingleStep_C", false, "AT3_Uebung"));
+        Check(RequireArguments(new[] { "--freigabe-runtime", "--freigabe-default-fortlauf", "--report", "x.json", "--instance", "AT3_Uebung" }).EndsWith("x.json"));
+        Reject(() => RequireArguments(new[] { "--freigabe-runtime", "--freigabe-default-fortlauf", "--report", "x.json", "--instance", "" }));
         Reject(() => NeedsChange("Other", "Run", "SingleStep_P", false));
-        Reject(() => NeedsChange(InstanceName, "Stop", "SingleStep_P", false));
+        Check(NeedsChange(InstanceName, "Stop", "SingleStep_P", false));
+        Check(NeedsChange(InstanceName, "Stop", "SingleStep_C", false));
+        Check(!NeedsChange(InstanceName, "Stop", "Default", false));
+        Check(IsRecovered("Stop", "Stop", "Default"));
+        Check(!IsRecovered("Stop", "Run", "Default"));
+        Check(!IsRecovered("Stop", "Stop", "SingleStep_C"));
+        Check(IsRecovered("Freeze", "Run", "Default"));
+        Check(!IsRecovered("Freeze", "Stop", "Default"));
+        Reject(() => NeedsChange(InstanceName, "Off", "Default", false));
         Reject(() => NeedsChange(InstanceName, "Run", "SingleStep_CP", false));
         Reject(() => NeedsChange(InstanceName, "Run", "SingleStep_P", true));
         Reject(() => RequireArguments(Array.Empty<string>()));
@@ -67,7 +83,7 @@ internal static class Program
             // CreateNew prevents overwriting evidence; checkpoints survive a blocked native call.
             using var file = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
             var report = new Dictionary<string, object?> {
-                ["instance"] = InstanceName, ["operation"] = "ExplicitRestoreDefault",
+                ["instance"] = args.Length == 6 ? args[5] : InstanceName, ["operation"] = "ExplicitRestoreDefault",
                 ["utcStarted"] = DateTime.UtcNow.ToString("o"), ["sdkProductVersion"] = version.ProductVersion,
                 ["sdkFileVersion"] = version.FileVersion, ["passed"] = false,
                 ["setterAttempted"] = false, ["setterReturned"] = false, ["cleanupConfirmed"] = false,
@@ -102,7 +118,7 @@ internal static class NativeRestore
         try
         {
             save("OpeningExistingInstance");
-            instance = SimulationRuntimeManager.CreateInterface(Program.InstanceName);
+            instance = SimulationRuntimeManager.CreateInterface((string)report["instance"]!);
             if (instance == null) throw new InvalidOperationException("Instanz nicht vorhanden; keine CPU wird erzeugt.");
             string name = instance.Name;
             string beforeState = instance.OperatingState.ToString();
@@ -111,7 +127,7 @@ internal static class NativeRestore
             report["observedName"] = name; report["beforeState"] = beforeState;
             report["beforeMode"] = beforeMode; report["defaultSyncEvents"] = defaultEvents;
             save("BeforeChange");
-            if (Program.NeedsChange(name, beforeState, beforeMode, defaultEvents))
+            if (Program.NeedsChange(name, beforeState, beforeMode, defaultEvents, (string)report["instance"]!))
             {
                 report["setterAttempted"] = true; save("SettingDefault");
                 // Installed V5 manual p.96 and p.235. Exactly one setter; no retry/resume fallback.
@@ -125,12 +141,14 @@ internal static class NativeRestore
                 string mode = instance.OperatingMode.ToString();
                 string state = instance.OperatingState.ToString();
                 report["afterMode"] = mode; report["afterState"] = state;
-                confirmed = mode == "Default" && state == "Run";
+                report["defaultAndRunObserved"] = mode == "Default" && state == "Run";
+                report["defaultAndStopObserved"] = mode == "Default" && state == "Stop";
+                confirmed = Program.IsRecovered(beforeState, state, mode);
                 if (confirmed) break;
                 Thread.Sleep(50);
             } while (timer.ElapsedMilliseconds < 2000);
-            report["defaultAndRunObserved"] = confirmed; save("AfterReadback");
-            if (!confirmed) throw new TimeoutException("Default/Run nicht bestaetigt; kein weiterer Setter oder CPU-Befehl.");
+            report["defaultStateConfirmed"] = confirmed; save("AfterReadback");
+            if (!confirmed) throw new TimeoutException("Default mit erwartetem CPU-Zustand (STOP bleibt STOP) nicht bestaetigt; kein weiterer Setter oder CPU-Befehl.");
         }
         finally
         {

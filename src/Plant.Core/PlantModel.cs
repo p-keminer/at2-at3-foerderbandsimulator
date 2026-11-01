@@ -48,6 +48,7 @@ namespace Plant.Core
         {
             configuration.Validate(); config = configuration.Copy();
             position = config.InitialLeftMm; length = config.WorkpieceLengthMm;
+            present = config.InitialPresent;
             metallic = config.Metallic; reflective = config.Reflective;
             left = new(config.Sensor("left"), config.Seed);
             optical = new(config.Sensor("optical"), config.Seed + 1);

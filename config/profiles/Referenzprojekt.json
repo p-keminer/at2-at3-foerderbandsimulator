@@ -1,0 +1,215 @@
+{
+  "SchemaVersion": 1,
+  "Id": "Referenzprojekt",
+  "Name": "Referenzprojekt",
+  "Description": "Dein fertiges Testprojekt. Betriebsfreigaben werden in TIA gesetzt.",
+  "ProjectFile": "tia/AT2_AT3_Referenzprojekt.zip",
+  "Plant": {
+    "SchemaVersion": 1,
+    "ProfileId": "DIGITALER TESTSTAND – Hallteilung 1,2 mm; keine Laborkalibrierung",
+    "BeltLengthMm": 1000,
+    "InitialLeftMm": 50,
+    "WorkpieceLengthMm": 120,
+    "Metallic": true,
+    "Reflective": true,
+    "SpeedAt10V": 100,
+    "DynamicMotor": false,
+    "Acceleration": 200,
+    "Deceleration": 400,
+    "MinimumVoltage": 0,
+    "HallPitchMm": 1.2,
+    "HallInitialPhase": 0,
+    "ModelStepUs": 1000,
+    "ControllerSampleUs": 1000,
+    "Seed": 1632026,
+    "CalibrationMmPerPulse": null,
+    "Sensors": [
+      {
+        "Id": "left",
+        "PositionMm": 100,
+        "ZoneMm": 0,
+        "HysteresisMm": 0,
+        "DelayUs": 0,
+        "ActiveHigh": true
+      },
+      {
+        "Id": "optical",
+        "PositionMm": 500,
+        "ZoneMm": 0,
+        "HysteresisMm": 0,
+        "DelayUs": 0,
+        "ActiveHigh": true
+      },
+      {
+        "Id": "right",
+        "PositionMm": 900,
+        "ZoneMm": 0,
+        "HysteresisMm": 0,
+        "DelayUs": 0,
+        "ActiveHigh": true
+      }
+    ]
+  },
+  "Map": {
+    "Signals": [
+      {
+        "BitOffset": 0,
+        "AreaSizeBytes": 4,
+        "Direction": "plant_to_plc",
+        "Confirmed": true,
+        "Type": "BOOL",
+        "ByteOffset": 0,
+        "Symbol": null,
+        "Id": "SensorLeftHigh",
+        "Area": "Input"
+      },
+      {
+        "BitOffset": 1,
+        "AreaSizeBytes": 4,
+        "Direction": "plant_to_plc",
+        "Confirmed": true,
+        "Type": "BOOL",
+        "ByteOffset": 0,
+        "Symbol": null,
+        "Id": "OpticalHigh",
+        "Area": "Input"
+      },
+      {
+        "BitOffset": 2,
+        "AreaSizeBytes": 4,
+        "Direction": "plant_to_plc",
+        "Confirmed": true,
+        "Type": "BOOL",
+        "ByteOffset": 0,
+        "Symbol": null,
+        "Id": "SensorRightHigh",
+        "Area": "Input"
+      },
+      {
+        "BitOffset": 3,
+        "AreaSizeBytes": 4,
+        "Direction": "plant_to_plc",
+        "Confirmed": true,
+        "Type": "BOOL",
+        "ByteOffset": 0,
+        "Symbol": null,
+        "Id": "HallHigh",
+        "Area": "Input"
+      },
+      {
+        "BitOffset": null,
+        "AreaSizeBytes": 0,
+        "Direction": "plant_to_plc",
+        "Confirmed": false,
+        "Type": "INT",
+        "ByteOffset": null,
+        "Symbol": null,
+        "Id": "PotiRaw",
+        "Area": "Input"
+      },
+      {
+        "BitOffset": 1,
+        "AreaSizeBytes": 4,
+        "Direction": "plc_to_plant",
+        "Confirmed": true,
+        "Type": "BOOL",
+        "ByteOffset": 0,
+        "Symbol": null,
+        "Id": "MotorRight",
+        "Area": "Output"
+      },
+      {
+        "BitOffset": 2,
+        "AreaSizeBytes": 4,
+        "Direction": "plc_to_plant",
+        "Confirmed": true,
+        "Type": "BOOL",
+        "ByteOffset": 0,
+        "Symbol": null,
+        "Id": "MotorLeft",
+        "Area": "Output"
+      },
+      {
+        "BitOffset": null,
+        "AreaSizeBytes": 0,
+        "Direction": "plc_to_plant",
+        "Confirmed": false,
+        "Type": "INT",
+        "ByteOffset": null,
+        "Symbol": null,
+        "Id": "SpeedCommandRaw",
+        "Area": "Output"
+      },
+      {
+        "BitOffset": 4,
+        "AreaSizeBytes": 4,
+        "Direction": "plc_to_plant",
+        "Confirmed": true,
+        "Type": "BOOL",
+        "ByteOffset": 0,
+        "Symbol": null,
+        "Id": "LampRed",
+        "Area": "Output"
+      },
+      {
+        "BitOffset": 3,
+        "AreaSizeBytes": 4,
+        "Direction": "plc_to_plant",
+        "Confirmed": true,
+        "Type": "BOOL",
+        "ByteOffset": 0,
+        "Symbol": null,
+        "Id": "LampYellow",
+        "Area": "Output"
+      },
+      {
+        "BitOffset": 0,
+        "AreaSizeBytes": 4,
+        "Direction": "plc_to_plant",
+        "Confirmed": true,
+        "Type": "BOOL",
+        "ByteOffset": 0,
+        "Symbol": null,
+        "Id": "LampGreen",
+        "Area": "Output"
+      },
+      {
+        "BitOffset": null,
+        "AreaSizeBytes": 0,
+        "Direction": "plc_to_diagnostics",
+        "Confirmed": false,
+        "Type": "LREAL",
+        "ByteOffset": null,
+        "Symbol": null,
+        "Id": "MeasuredLengthMm",
+        "Area": "Marker"
+      },
+      {
+        "BitOffset": null,
+        "AreaSizeBytes": 0,
+        "Direction": "plc_to_diagnostics",
+        "Confirmed": false,
+        "Type": "DINT",
+        "ByteOffset": null,
+        "Symbol": null,
+        "Id": "ControllerPulseCount",
+        "Area": "Marker"
+      },
+      {
+        "BitOffset": null,
+        "AreaSizeBytes": 0,
+        "Direction": "plc_to_diagnostics",
+        "Confirmed": false,
+        "Type": "BOOL",
+        "ByteOffset": null,
+        "Symbol": null,
+        "Id": "MeasurementActive",
+        "Area": "Marker"
+      }
+    ],
+    "LocalVirtualInstanceConfirmed": false,
+    "InstanceName": "AT2_Kopplung",
+    "SchemaVersion": 1
+  },
+  "DigitalSpeedMmPerSecond": 100
+}

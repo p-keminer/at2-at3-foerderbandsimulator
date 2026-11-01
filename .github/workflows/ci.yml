@@ -28,7 +28,7 @@ jobs:
         run: ./build.ps1 -Test -UiSmoke -EvidenceDirectory artifacts/ci
       - name: Bounded process watchdog regression
         run: ./tools/test-probe-watchdog.ps1 -Evidence artifacts/ci/watchdog.json
-      - name: Package offline application
+      - name: Package preview application
         run: ./tools/package.ps1
       - name: Upload test evidence
         if: always()
@@ -40,9 +40,9 @@ jobs:
       - name: Upload Windows download
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: AT2AT3-Windows-x64-offline
+          name: AT2AT3-Windows-x64-preview
           path: |
-            output/AT2AT3-Offline.zip
-            output/AT2AT3-Offline.zip.sha256
+            output/AT2AT3-Simulator.zip
+            output/AT2AT3-Simulator.zip.sha256
           if-no-files-found: error
           retention-days: 30

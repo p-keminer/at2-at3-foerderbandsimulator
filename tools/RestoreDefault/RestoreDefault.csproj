@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType><AssemblyName>AT2AT3.V5.RestoreDefault</AssemblyName>
-    <SiemensV5ApiPath>C:\Program Files (x86)\Common Files\Siemens\PLCSIMADV\API\5.0\Siemens.Simatic.Simulation.Runtime.Api.x64.dll</SiemensV5ApiPath>
+    <SiemensV5ApiPath Condition="'$(SiemensV5ApiPath)' == ''">$(MSBuildProgramFiles32)\Common Files\Siemens\PLCSIMADV\API\5.0\Siemens.Simatic.Simulation.Runtime.Api.x64.dll</SiemensV5ApiPath>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Plant.Core/Plant.Core.csproj" />

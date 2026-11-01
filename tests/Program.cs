@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -325,9 +325,14 @@ internal static partial class Program
             }
             calibrationEvidence = measurements;
         });
+        RunStudyProfileTests();
         RunCouplingTests();
         RunMinimalProbeTests();
         RunDigitalIntegrationTests();
+        RunWorkpieceTests();
+        RunLampProtocolTests();
+        RunInteractiveTests();
+        RunInteractiveHostTests();
         string directory = args.Length > 0 ? args[0] : "test-results"; Directory.CreateDirectory(directory);
         Json.SaveAtomic(Path.Combine(directory, "core-tests.json"), Json.Write(new { schemaVersion = 1, passed = failed == 0, tests = results.Count, assertions, failed, cases = results, note = "Nur tatsächlich ausgeführte Offlineprüfungen. Kein Siemens-Livetest; WPF getrennt." }));
         Json.SaveAtomic(Path.Combine(directory, "calibration-scaling.json"), Json.Write(calibrationEvidence));

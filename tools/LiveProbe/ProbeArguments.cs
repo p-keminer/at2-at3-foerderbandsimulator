@@ -6,7 +6,7 @@ using Plant.Core;
 internal sealed class ProbeArguments
 {
     private static readonly string[] Flags = { "--freigabe-runtime", "--freigabe-cpu-schritte", "--minimal-two-signal", "--confirm-tia-minimal", "--cycle-control-point", "--confirm-ob1-automatic",
-        "--digital-plant", "--confirm-tia-digital", "--allow-movement", "--require-transport", "--stream" };
+        "--digital-plant", "--confirm-tia-digital", "--allow-movement", "--require-transport", "--stream", "--interactive" };
     private static readonly string[] Values = { "--map", "--partition", "--report", "--steps", "--sdk", "--profile", "--plant", "--max-virtual-seconds", "--wall-seconds" };
     private readonly Dictionary<string, string?> parsed = new();
     public bool Minimal => parsed.ContainsKey("--minimal-two-signal");
@@ -41,7 +41,9 @@ internal sealed class ProbeArguments
         Numbers.Require(result.CycleControlPoint || !result.parsed.ContainsKey("--confirm-ob1-automatic"), "OB1-Automatikbestätigung erfordert ausdrückliches C-Profil.");
         Numbers.Require(!result.Digital || (!result.Minimal && result.CycleControlPoint && result.Has("--confirm-tia-digital")), "Digitaltest braucht eigenes C-Profil und TIA-Digitalbestätigung.");
         Numbers.Require(!result.Has("--require-transport") || result.Has("--allow-movement"), "Transportabnahme benötigt bewusste Bewegungsfreigabe.");
-        foreach (string key in new[] { "--confirm-tia-digital", "--allow-movement", "--require-transport", "--stream", "--profile", "--plant", "--max-virtual-seconds", "--wall-seconds" })
+        Numbers.Require(!result.Has("--interactive") || (result.Digital && result.Has("--stream") && result.Has("--allow-movement") && !result.Has("--require-transport")),
+            "Interaktive Verbindung benötigt den überwachten Bedienkanal und SPS-Bewegungsfreigabe; keine Transportabnahme.");
+        foreach (string key in new[] { "--confirm-tia-digital", "--allow-movement", "--require-transport", "--stream", "--interactive", "--profile", "--plant", "--max-virtual-seconds", "--wall-seconds" })
             Numbers.Require(result.Digital || !result.Has(key), "Argument gehört ausschließlich zum Digitalprofil: " + key);
         if (result.Digital) { result.Required("--profile"); result.Required("--plant"); }
         result.Required("--map"); if (!result.CycleControlPoint) result.Required("--partition"); result.Required("--report");

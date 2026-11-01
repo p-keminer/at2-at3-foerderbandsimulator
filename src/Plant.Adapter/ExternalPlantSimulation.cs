@@ -5,7 +5,7 @@ using Plant.Core;
 namespace Plant.Adapter
 {
     // Reuses the existing plant kernel, WITHOUT a ReferenceController or offline wall-time scheduler.
-    public sealed class ExternalPlantSimulation : IExternallyTimedPlant, IAdoptedOutputObserver
+    public sealed class ExternalPlantSimulation : IExternallyTimedPlant, IAdoptedOutputObserver, IInputBoundaryCommands
     {
         private readonly PlantModel model;
         private readonly PlantConfiguration configuration;
@@ -13,8 +13,9 @@ namespace Plant.Adapter
         private volatile bool valid = true;
         private ActuatorFrame adopted = new(Valid: false);
         private long generatedEdges;
-        public ExternalPlantSimulation(PlantConfiguration configuration)
-        { this.configuration = configuration.Copy(); model = new(this.configuration); model.Edge += _ => generatedEdges++; }
+        private readonly WorkpieceCommandChannel? workpieceCommands;
+        public ExternalPlantSimulation(PlantConfiguration configuration, WorkpieceCommandChannel? workpieceCommands = null)
+        { this.configuration = configuration.Copy(); this.workpieceCommands = workpieceCommands; model = new(this.configuration); model.Edge += _ => generatedEdges++; }
         public long TimeNs { get { lock (gate) return model.TimeNs; } }
         public PlantSnapshot Snapshot { get { lock (gate) return model.Snapshot(adopted with { Valid = adopted.Valid && valid }); } }
         public void AdvanceTo(long targetNs, ActuatorFrame heldCommand, CancellationToken cancellation)
@@ -43,5 +44,36 @@ namespace Plant.Adapter
         { lock (gate) return model.Sensors with { Sequence = sequence, Valid = valid }; }
         public void Invalidate() => valid = false;
         public void AdoptOutputs(ActuatorFrame command) { lock (gate) adopted = command; }
+        public void ApplyPendingCommands(long sequence) => workpieceCommands?.ApplyAtInputBoundary(this, sequence);
+        public WorkpieceCommandResult ChangeWorkpiece(WorkpieceCommand command, long sequence)
+        {
+            lock (gate)
+            {
+                var answer = new WorkpieceCommandResult { Id = command.Id, Sequence = sequence, TimeNs = model.TimeNs };
+                try
+                {
+                    command.Validate();
+                    var state = model.Snapshot(adopted);
+                    Numbers.Require(valid && adopted.Valid && adopted.Sequence == sequence,
+                        "Kein gültiger aktueller SPS-Synchronisationspunkt.");
+                    Numbers.Require(WorkpieceHandling.IsStopped(adopted.MotorRight, adopted.MotorLeft, state.MotorVelocity, state.ObjectVelocity),
+                        "Prüfling nur bei Stillstand und ausgeschalteten Motorbefehlen ändern.");
+                    if (command.Action == "InsertLeft")
+                    {
+                        Numbers.Require(!state.Present, "Zuerst den vorhandenen Prüfling entfernen.");
+                        model.Insert(WorkpieceHandling.LeftPosition(configuration, command.LengthMm), command.LengthMm, configuration.Metallic, configuration.Reflective);
+                        answer.Detail = "Prüfling links eingesetzt.";
+                    }
+                    else
+                    {
+                        Numbers.Require(state.Present, "Kein Prüfling auf dem Förderband.");
+                        model.Remove(); answer.Detail = "Prüfling entfernt.";
+                    }
+                    answer.Applied = true;
+                }
+                catch (ArgumentException e) { answer.Detail = e.Message; }
+                return answer;
+            }
+        }
     }
 }

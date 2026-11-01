@@ -26,18 +26,28 @@ namespace Plant.Wpf
         public bool RuntimeApproved { get; set; }
         public bool CpuStepsApproved { get; set; }
         public bool TiaConfirmed { get; set; }
+        internal string ExpectedInstanceName { get; set; } = "";
     }
     internal sealed record LiveProcessSnapshot(LiveProcessState State, string Detail,
         DigitalProgress? Latest = null, string ReportPath = "", bool IsActive = false,
         bool Passed = false, bool TransportCompleted = false, bool CleanupConfirmed = false,
         string CpuBeforeDisconnect = "Ungeprüft", int? ExitCode = null, bool HardKilled = false,
-        bool StopRequested = false, string? Error = null);
+        bool StopRequested = false, string? Error = null, bool StationaryTest = false, string? EndReason = null,
+        bool InteractiveSession = false, bool FreezeOwnershipConfirmed = false, bool OutputLogTruncated = false);
 
     // This host never references Siemens assemblies. Only an explicitly authorized child
     // uses the existing native adapter. A blocked native call cannot freeze the WPF thread.
     // Kill applies only to our owned child, NEVER to a CPU/Siemens process or CPU mode.
     internal sealed class LiveProcessHost
     {
+        internal void ClearCompletedView()
+        {
+            lock (gate)
+            {
+                Numbers.Require(!current.IsActive && !childTerminationUnconfirmed, "Adapterprozess muss vollständig beendet sein.");
+                current = new(LiveProcessState.Disconnected, "Nicht verbunden"); samples.Clear();
+            }
+        }
         private readonly object gate = new();
         private LiveProcessSnapshot current = new(LiveProcessState.Disconnected, "Keine Siemens-Verbindung gestartet.");
         private TaskCompletionSource<string>? stopSignal;
@@ -47,6 +57,11 @@ namespace Plant.Wpf
         private bool finalizing;
         private int generation;
         private bool childTerminationUnconfirmed;
+        private readonly SemaphoreSlim inputGate = new(1, 1);
+        private StreamWriter? commandWriter;
+        private TaskCompletionSource<WorkpieceCommandResult>? workpieceReply;
+        private WorkpieceCommand? workpieceCommand;
+        private long workpieceId;
         private readonly Queue<DigitalProgress> samples = new();
         private const int MaxReportBytes = 128 * 1024 * 1024;
         private const int MaxQueuedSamples = 50001; // 50000 allowed advances plus the initial point.
@@ -58,12 +73,14 @@ namespace Plant.Wpf
         private static DigitalProgress? Copy(DigitalProgress? value) => value == null ? null : new DigitalProgress
         {
             SchemaVersion = value.SchemaVersion, TimeNs = value.TimeNs, Sequence = value.Sequence,
+            WorkpieceCommandsSupported = value.WorkpieceCommandsSupported, WorkpieceChange = value.WorkpieceChange?.Copy(),
             Position = value.Position, Length = value.Length, MotorMm = value.MotorMm, BeltMm = value.BeltMm,
             MotorVelocity = value.MotorVelocity, ObjectVelocity = value.ObjectVelocity, Present = value.Present,
             LeftIdeal = value.LeftIdeal, OpticalIdeal = value.OpticalIdeal, RightIdeal = value.RightIdeal,
             LeftDetected = value.LeftDetected, OpticalDetected = value.OpticalDetected, RightDetected = value.RightDetected,
             Left = value.Left, Optical = value.Optical, Right = value.Right, Hall = value.Hall,
             MotorRight = value.MotorRight, MotorLeft = value.MotorLeft, LampGreen = value.LampGreen,
+            LampYellow = value.LampYellow, LampRed = value.LampRed,
             GeneratedRisingEdges = value.GeneratedRisingEdges
         };
         public DigitalProgress[] DrainSamples()
@@ -80,6 +97,60 @@ namespace Plant.Wpf
         }
         private void Update(Func<LiveProcessSnapshot, LiveProcessSnapshot> change)
         { lock (gate) current = change(current); }
+        private bool CanChangeWorkpieceCore() =>
+            current.IsActive && current.State == LiveProcessState.Streaming && !current.StopRequested && !finalizing &&
+            workpieceReply == null && current.Latest?.WorkpieceCommandsSupported == true &&
+            (Stopwatch.GetTimestamp() - lastSampleTicks) / (double)Stopwatch.Frequency <= 2 &&
+            WorkpieceHandling.IsStopped(current.Latest.MotorRight, current.Latest.MotorLeft, current.Latest.MotorVelocity, current.Latest.ObjectVelocity);
+        public bool CanChangeWorkpiece { get { lock (gate) return CanChangeWorkpieceCore(); } }
+        public async Task<WorkpieceCommandResult> ChangeWorkpieceAsync(string action, double length)
+        {
+            TaskCompletionSource<WorkpieceCommandResult> reply; WorkpieceCommand command;
+            int ownerGeneration;
+            lock (gate)
+            {
+                Numbers.Require(CanChangeWorkpieceCore(), "Prüfling nur bei frisch bestätigtem Stillstand ändern; kein Befehl darf offen sein.");
+                Numbers.Require(action == "Remove" ? current.Latest!.Present : !current.Latest!.Present, "Prüflingszustand passt nicht zur Aktion.");
+                command = new() { Id = ++workpieceId, Action = action, LengthMm = length }; command.Validate();
+                workpieceCommand = command; workpieceReply = reply = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                ownerGeneration = generation;
+            }
+            try
+            {
+                var send = SendInputLineAsync("WORKPIECE " + Json.Write(command), ownerGeneration);
+                _ = send.ContinueWith(t => { _ = t.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
+                var deadline = Task.Delay(3000);
+                if (await Task.WhenAny(send, deadline).ConfigureAwait(false) != send) throw new TimeoutException("Prüflingsbefehl konnte nicht fristgerecht gesendet werden.");
+                await send.ConfigureAwait(false);
+                if (await Task.WhenAny(reply.Task, deadline).ConfigureAwait(false) != reply.Task) throw new TimeoutException("Übernahme des Prüflingsbefehls nicht bestätigt.");
+                return await reply.Task.ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Fault("Prüflingsbedienung unbestätigt; Kopplung wird beendet: " + e.Message, ownerGeneration);
+                throw;
+            }
+            finally
+            {
+                lock (gate) if (ReferenceEquals(workpieceReply, reply)) { workpieceReply = null; workpieceCommand = null; }
+            }
+        }
+        private async Task SendInputLineAsync(string line, int ownerGeneration)
+        {
+            await inputGate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                StreamWriter writer;
+                lock (gate)
+                {
+                    Numbers.Require(generation == ownerGeneration, "Steuerbefehl gehört zu einer beendeten Sitzung.");
+                    writer = commandWriter ?? throw new InvalidOperationException("Steuerkanal nicht geöffnet.");
+                }
+                await writer.WriteLineAsync(line).ConfigureAwait(false);
+                await writer.FlushAsync().ConfigureAwait(false);
+            }
+            finally { inputGate.Release(); }
+        }
         private void Fault(string error, int? expectedGeneration = null)
         {
             lock (gate)
@@ -118,8 +189,11 @@ namespace Plant.Wpf
                 "Getrennter LiveProbe fehlt. Optionalen Siemens-Compilerbuild ausführen.");
             Numbers.Require(Directory.Exists(request.WorkingDirectory), "Arbeitsordner des LiveProbe fehlt.");
             var profile = Json.Read<DigitalCycleProfile>(File.ReadAllText(request.ProfilePath));
-            profile.RequireMap(Json.Read<SignalMap>(File.ReadAllText(request.MapPath)));
+            var map = Json.Read<SignalMap>(File.ReadAllText(request.MapPath)); profile.RequireMap(map);
+            request.ExpectedInstanceName = map.InstanceName!;
             profile.ConfigurePlant(Json.LoadProfile(request.PlantPath));
+            Numbers.Require(!request.Limits.InteractiveSession || !Json.LoadProfile(request.PlantPath).InitialPresent,
+                "Interaktive Verbindung muss ohne Prüfling beginnen.");
             Numbers.Require(string.Equals(Path.GetExtension(request.ReportPath), ".json", StringComparison.OrdinalIgnoreCase), "JSON-Bericht erforderlich.");
             foreach (string suffix in new[] { "", ".stdout.txt", ".stderr.txt", ".host.json" })
                 Numbers.Require(!File.Exists(request.ReportPath + suffix), "Bericht existiert bereits: " + request.ReportPath + suffix);
@@ -135,6 +209,7 @@ namespace Plant.Wpf
                 "--wall-seconds", r.Limits.WallTimeoutSeconds.ToString(CultureInfo.InvariantCulture) };
             if (!r.Limits.RequireStationary) args.Add("--allow-movement");
             if (r.Limits.RequireCompletedTransport) args.Add("--require-transport");
+            if (r.Limits.InteractiveSession) args.Add("--interactive");
             return string.Join(" ", args.Select(QuoteArgument));
         }
         public async Task RunAsync(LiveProcessRequest requested)
@@ -151,8 +226,9 @@ namespace Plant.Wpf
                 completion = done = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 protocolError = null; lastSampleTicks = 0; finalizing = false;
                 ownerGeneration = ++generation; samples.Clear();
-                current = new(LiveProcessState.Connecting, "Verbinde vorhandene lokale Instanz AT2_Kopplung; C-Profil.",
-                    ReportPath: request.ReportPath, IsActive: true);
+                current = new(LiveProcessState.Connecting, "Verbinde lokale CPU „" + request.ExpectedInstanceName + "“…",
+                    ReportPath: request.ReportPath, IsActive: true, StationaryTest: request.Limits.RequireStationary,
+                    InteractiveSession: request.Limits.InteractiveSession);
             }
             var process = new Process { StartInfo = new ProcessStartInfo
             {
@@ -168,14 +244,18 @@ namespace Plant.Wpf
             Task? stdout = null, stderr = null;
             var clock = Stopwatch.StartNew();
             using var hardDeadline = new CancellationTokenSource();
+            using var heartbeatLifetime = new CancellationTokenSource();
+            Task? heartbeat = null;
             Timer? freshness = null;
             try
             {
                 if (!process.Start()) throw new InvalidOperationException("LiveProbe-Prozess konnte nicht gestartet werden.");
                 started = true;
+                lock (gate) commandWriter = process.StandardInput;
                 _ = process.Handle; // Keep the owned process handle even if a fast child already exited.
                 stdout = Pump(process.StandardOutput, request.ReportPath + ".stdout.txt", true, ownerGeneration);
                 stderr = Pump(process.StandardError, request.ReportPath + ".stderr.txt", false, ownerGeneration);
+                if (request.Limits.InteractiveSession) heartbeat = SendHeartbeatsAsync(ownerGeneration, heartbeatLifetime.Token);
                 freshness = new Timer(_ =>
                 {
                     try { if (process.HasExited) return; }
@@ -184,12 +264,16 @@ namespace Plant.Wpf
                     // queued before FINALIZING must not invalidate an accepted marker.
                     lock (gate)
                     {
+                        if (request.Limits.InteractiveSession && current.IsActive && generation == ownerGeneration &&
+                            !finalizing && lastSampleTicks == 0 && clock.Elapsed.TotalSeconds > 10)
+                            Fault("Innerhalb von 10 s keine bestätigte SPS-Verbindung.", ownerGeneration);
                         if (current.IsActive && generation == ownerGeneration && !finalizing && lastSampleTicks != 0 &&
                             (Stopwatch.GetTimestamp() - lastSampleTicks) / (double)Stopwatch.Frequency > 5)
                             Fault("Seit mehr als 5 s kein frischer SPS-Snapshot. Modell angehalten; keine automatische Wiederaufnahme.", ownerGeneration);
                     }
                 }, null, 250, 250);
-                Task hard = Task.Delay(TimeSpan.FromSeconds(request.Limits.WallTimeoutSeconds + 10), hardDeadline.Token);
+                Task hard = request.Limits.InteractiveSession ? Task.Delay(Timeout.Infinite, hardDeadline.Token)
+                    : Task.Delay(TimeSpan.FromSeconds(request.Limits.WallTimeoutSeconds + 10), hardDeadline.Token);
                 Task first = await Task.WhenAny(exited.Task, stop.Task, hard).ConfigureAwait(false);
                 if (first == stop.Task && !exited.Task.IsCompleted)
                 {
@@ -198,7 +282,7 @@ namespace Plant.Wpf
                     Task grace = Task.Delay(5000);
                     try
                     {
-                        var send = process.StandardInput.WriteLineAsync("STOP");
+                        var send = SendInputLineAsync("STOP", ownerGeneration);
                         _ = send.ContinueWith(t => { _ = t.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
                         await Task.WhenAny(send, Task.Delay(200)).ConfigureAwait(false);
                     }
@@ -222,7 +306,7 @@ namespace Plant.Wpf
                     outputCaptured = await Task.WhenAny(drain, Task.Delay(2000)).ConfigureAwait(false) == drain && drain.Status == TaskStatus.RanToCompletion;
                 }
                 if (!processExited || !outputCaptured) Fault("Prozessende oder vollständiger Ausgabeabschluss unbestätigt.");
-                ReadFinalReport(request.ReportPath, exitCode, hardKilled, outputCaptured);
+                ReadFinalReport(request.ReportPath, exitCode, hardKilled, outputCaptured, request.ExpectedInstanceName);
             }
             catch (Exception e)
             {
@@ -238,7 +322,8 @@ namespace Plant.Wpf
             }
             finally
             {
-                hardDeadline.Cancel(); freshness?.Dispose();
+                hardDeadline.Cancel(); freshness?.Dispose(); heartbeatLifetime.Cancel();
+                if (heartbeat != null) await Task.WhenAny(heartbeat, Task.Delay(500)).ConfigureAwait(false);
                 lock (gate) childTerminationUnconfirmed = started && !processExited;
                 Update(s => s with { ExitCode = exitCode, HardKilled = hardKilled,
                     CleanupConfirmed = s.CleanupConfirmed && !hardKilled && outputCaptured && processExited });
@@ -249,6 +334,11 @@ namespace Plant.Wpf
                         state = Snapshot with { IsActive = false }, note = "Nur eigener Adapterprozess. Kein automatischer CPU-Zustandswechsel oder Wiederanlauf." }), new UTF8Encoding(false));
                 }
                 catch (Exception e) { Update(s => s with { State = LiveProcessState.Faulted, Passed = false, Error = e.Message, Detail = "Hostbericht konnte nicht gespeichert werden: " + e.Message }); }
+                lock (gate)
+                {
+                    commandWriter = null;
+                    workpieceReply?.TrySetException(new InvalidOperationException("Lauf beendet, ohne den Prüflingsbefehl zu bestätigen."));
+                }
                 try { process.Dispose(); } catch (Exception) { }
                 Update(s => s with { IsActive = false });
                 done.TrySetResult(true);
@@ -268,6 +358,29 @@ namespace Plant.Wpf
             if (done != null && await Task.WhenAny(done, Task.Delay(10000)).ConfigureAwait(false) != done)
                 Fault("Trennen ist nach 10 s nicht bestätigt. Kein automatischer Wiederanlauf.");
         }
+        private async Task SendHeartbeatsAsync(int ownerGeneration, CancellationToken cancellation)
+        {
+            try
+            {
+                while (!cancellation.IsCancellationRequested)
+                {
+                    lock (gate) { if (generation != ownerGeneration || current.StopRequested || finalizing) return; }
+                    Task send = SendInputLineAsync("PING", ownerGeneration);
+                    _ = send.ContinueWith(t => { _ = t.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
+                    if (await Task.WhenAny(send, Task.Delay(1000, cancellation)).ConfigureAwait(false) != send)
+                        throw new TimeoutException("Bedienkanal nimmt kein Lebenszeichen an.");
+                    await send.ConfigureAwait(false);
+                    await Task.Delay(1000, cancellation).ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+            catch (Exception e)
+            {
+                lock (gate)
+                    if (!cancellation.IsCancellationRequested && !current.StopRequested && !finalizing)
+                        Fault("Bedienkanal verloren: " + e.Message, ownerGeneration);
+            }
+        }
         private async Task Pump(StreamReader reader, string path, bool acceptSamples, int ownerGeneration)
         {
             try
@@ -280,7 +393,17 @@ namespace Plant.Wpf
                     if (!logFull)
                     {
                         int bytes = Encoding.UTF8.GetByteCount(buffer, 0, count);
-                        if (logged + bytes > MaxReportBytes) { logFull = true; Fault("Adapterausgabe überschreitet 128 MiB; Kopplung wird beendet.", ownerGeneration); }
+                        int logLimit = Snapshot.InteractiveSession ? 8 * 1024 * 1024 : MaxReportBytes;
+                        if (logged + bytes > logLimit)
+                        {
+                            logFull = true;
+                            if (Snapshot.InteractiveSession)
+                            {
+                                await log.WriteLineAsync("\n[Protokolldatei auf 8 MiB begrenzt. Validierung und Liveübertragung laufen weiter; letzte Samples im Abschlussbericht.]").ConfigureAwait(false);
+                                Update(s => s with { OutputLogTruncated = true });
+                            }
+                            else Fault("Adapterausgabe überschreitet 128 MiB; Kopplung wird beendet.", ownerGeneration);
+                        }
                         else { await log.WriteAsync(buffer, 0, count).ConfigureAwait(false); logged += bytes; }
                     }
                     for (int i = 0; i < count; i++)
@@ -327,7 +450,7 @@ namespace Plant.Wpf
                     return;
                 }
                 var sample = Json.Read<DigitalProgress>(line.Substring(7));
-                Numbers.Require(sample.SchemaVersion == 1 && sample.Sequence >= 1 && sample.TimeNs >= 0 && sample.GeneratedRisingEdges >= 0,
+                Numbers.Require(sample.SchemaVersion == DigitalProgress.CurrentSchemaVersion && sample.Sequence >= 1 && sample.TimeNs >= 0 && sample.GeneratedRisingEdges >= 0,
                     "Ungültige Version/Zeit/Sequenz in Adapterdaten.");
                 Numbers.Require(new[] { sample.Position, sample.Length, sample.MotorMm, sample.BeltMm, sample.MotorVelocity, sample.ObjectVelocity }.All(Numbers.Finite) && sample.Length > 0,
                     "Ungültige Modellwerte in Adapterdaten.");
@@ -342,14 +465,24 @@ namespace Plant.Wpf
                         "Fehlender, doppelter oder zeitlich falscher Adapter-Snapshot.");
                     Numbers.Require(samples.Count < MaxQueuedSamples, "Mehr als 50001 ungelesene Adapter-Snapshots; Kopplung wird angehalten.");
                     current = current with { State = current.StopRequested ? LiveProcessState.Stopping : LiveProcessState.Streaming,
-                        Detail = "Digitaler SPS-Austausch aktiv; Messwerte-DB nicht angebunden.", Latest = sample };
+                        Detail = "Digitaler SPS-Austausch aktiv.", Latest = sample };
+                    if (sample.WorkpieceChange is WorkpieceCommandResult change)
+                    {
+                        Numbers.Require(sample.WorkpieceCommandsSupported && workpieceReply != null && workpieceCommand != null &&
+                            change.Id == workpieceCommand.Id && change.Sequence == sample.Sequence && change.TimeNs == sample.TimeNs &&
+                            !workpieceReply.Task.IsCompleted, "Unzugeordnete oder doppelte Prüflingsbestätigung.");
+                        Numbers.Require(!change.Applied || (sample.Present == (workpieceCommand!.Action == "InsertLeft") &&
+                            WorkpieceHandling.IsStopped(sample.MotorRight, sample.MotorLeft, sample.MotorVelocity, sample.ObjectVelocity)),
+                            "Prüflingsbestätigung widerspricht dem aktuellen Anlagenzustand.");
+                        workpieceReply!.TrySetResult(change.Copy());
+                    }
                     samples.Enqueue(sample);
                     lastSampleTicks = Stopwatch.GetTimestamp();
                 }
             }
             catch (Exception e) { Fault("Ungültige Adapterdaten: " + e.Message, ownerGeneration); }
         }
-        private void ReadFinalReport(string path, int? exitCode, bool hardKilled, bool outputCaptured)
+        private void ReadFinalReport(string path, int? exitCode, bool hardKilled, bool outputCaptured, string expectedInstance)
         {
             if (!File.Exists(path)) { Fault("Kein vollständiger fachlicher Bericht vorhanden. stderr/Hostbericht prüfen; CPU-Zustand unbestätigt."); return; }
             var file = new FileInfo(path);
@@ -361,18 +494,19 @@ namespace Plant.Wpf
                     throw new InvalidOperationException("Digitaler Ergebnisabschnitt fehlt.");
                 bool Bool(string key) => result.TryGetValue(key, out var value) && value is bool b && b;
                 string? Text(string key) => result.TryGetValue(key, out var value) ? value as string : null;
-                Numbers.Require(Text("Profile") == "AT2_Kopplung_7_digital_bits_SingleStep_C", "Ergebnis gehört nicht zum digitalen C-Profil.");
+                Numbers.Require(Text("Profile") == DigitalCycleProfile.ProfileId, "Ergebnis gehört nicht zum digitalen C-Profil mit neun Signalen.");
                 string cpu = "Ungeprüft";
                 if (result.TryGetValue("BeforeDisconnect", out var inspectValue) && inspectValue is IDictionary<string, object> inspect)
                 {
                     string Field(string key) => inspect.TryGetValue(key, out var v) ? v as string ?? "?" : "?";
-                    Numbers.Require(Field("InstanceName") == "AT2_Kopplung", "Falsche Instanz im Abschlussbericht.");
+                    Numbers.Require(Field("InstanceName") == expectedInstance, "Falsche Instanz im Abschlussbericht.");
                     cpu = Field("OperatingState") + " / " + Field("OperatingMode");
                 }
                 bool cleanup = Bool("CleanupConfirmed") && !hardKilled && outputCaptured;
                 bool stopped, hasSamples; string? streamError;
                 lock (gate) { stopped = current.StopRequested; hasSamples = current.Latest != null; streamError = protocolError; }
                 bool frozen = cpu == "Freeze / SingleStep_C";
+                Numbers.Require(Bool("InteractiveSession") == Snapshot.InteractiveSession, "Sitzungsart im Abschlussbericht stimmt nicht überein.");
                 string? nativeError = Text("Error");
                 string? error = streamError ?? nativeError ?? Text("CleanupError") ?? Text("InspectionError");
                 bool passed = Bool("Passed") && exitCode == 0 && cleanup && frozen && hasSamples && error == null;
@@ -381,11 +515,16 @@ namespace Plant.Wpf
                 bool canceled = nativeError != null && (nativeError.Contains("OperationCanceledException") || nativeError.Contains("TaskCanceledException"));
                 bool controlledStop = stopped && cleanup && frozen && streamError == null && Text("CleanupError") == null && Text("InspectionError") == null &&
                     exitCode == 1 && Text("EndReason") == "FaultOrCanceled" && canceled;
-                string detail = passed ? "Begrenzter digitaler Lauf beendet. " : controlledStop ? "Kopplung kontrolliert getrennt; Lauf abgebrochen. " : "Digitaler Lauf fehlgeschlagen oder unbestätigt. ";
+                string detail = passed ? (Snapshot.InteractiveSession ? "SPS-Verbindung kontrolliert getrennt. " : "Begrenzter digitaler Lauf beendet. ") : controlledStop ? "Kopplung kontrolliert getrennt; Lauf abgebrochen. " : "Digitaler Lauf fehlgeschlagen oder unbestätigt. ";
                 detail += "Letzter CPU-Zustand: " + cpu + ". Nach Dispose nicht erneut verbunden; kein Default-Reset. Bericht: " + path;
+                // Ownership is established by our confirmed samples, not by the final
+                // RUN/STOP state. STOP must also release SingleStep_C after clean disposal.
+                bool ownedFreeze = LiveSessionPolicy.IsReleasableMode(cpu) && hasSamples && cleanup && streamError == null &&
+                    Text("CleanupError") == null && Text("InspectionError") == null && (exitCode == 0 || exitCode == 1);
                 Update(s => s with { State = passed || controlledStop ? LiveProcessState.Completed : LiveProcessState.Faulted,
                     Detail = detail, Passed = passed, TransportCompleted = Bool("TransportCompleted"), CleanupConfirmed = cleanup,
-                    CpuBeforeDisconnect = cpu, Error = error, ExitCode = exitCode, HardKilled = hardKilled });
+                    CpuBeforeDisconnect = cpu, Error = error, ExitCode = exitCode, HardKilled = hardKilled, EndReason = Text("EndReason"),
+                    FreezeOwnershipConfirmed = ownedFreeze });
             }
             catch (Exception e) { Fault("Abschlussbericht ist unvollständig/ungültig: " + e.Message); }
         }

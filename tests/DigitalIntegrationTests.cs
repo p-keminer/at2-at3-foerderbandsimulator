@@ -26,14 +26,17 @@ internal static partial class Program
         public SensorFrame? Published;
         public int Opens, Writes, Continues, Disposals, PlcCounter;
         public bool Automatic = true, Permission = true, Active, Right, Conflict, NoInitialEvent, PreviousGate;
+        public bool LampRed, LampYellow;
         public bool FailInspection;
+        public bool FailWrite;
         public Action<DigitalEndpointDouble>? OnContinue;
         public long[] Deltas = { 1000000, 1100000, 900000, 1200000 };
         public IPlcEndpoint OpenExisting(SignalMap map, LiveAuthorization a, CancellationToken c) { Opens++; return this; }
         public void BeginSingleStepInputs() { if (!NoInitialEvent) SyncPoint?.Invoke(new(0, 1008798, 0, 1)); }
         public PlcReadback ReadOutputs(ClockGrant grant) => new(new(Right, Conflict, Analog.Nominal,
+            LampRed: LampRed, LampYellow: LampYellow,
             LampGreen: Published?.SensorLeftHigh ?? false, Sequence: grant.Sequence, TimeUs: grant.TimeUs));
-        public void WriteInputs(SensorFrame frame) { Published = frame; Writes++; }
+        public void WriteInputs(SensorFrame frame) { if (FailWrite) throw new InvalidOperationException("input write failure double"); Published = frame; Writes++; }
         public void ContinueToNextSyncPoint()
         {
             Continues++; var s = Published!; bool before = Active;
@@ -60,14 +63,17 @@ internal static partial class Program
     }
     private static void RunDigitalIntegrationTests()
     {
-        Test("D01", "Sieben bestätigte Bits; Vollmap bleibt streng, keine Marker/DB/Analog-Ersatzadressen", () =>
+        Test("D01", "Neun bestätigte Bits; Vollmap bleibt streng, keine Marker/DB/Analog-Ersatzadressen", () =>
         {
             var profile = DigitalProfile(); profile.RequireMap(DigitalMap()); Reject(() => DigitalMap().RequireLiveValid());
             foreach (string id in DigitalCycleProfile.SignalIds)
             {
                 var map = DigitalMap(); map.Signals.Single(s => s.Id == id).Confirmed = false; Reject(() => profile.RequireMap(map));
                 map = DigitalMap(); map.Signals.Single(s => s.Id == id).BitOffset = 7; Reject(() => profile.RequireMap(map));
+                map = DigitalMap(); map.Signals.Single(s => s.Id == id).ByteOffset = null; Reject(() => profile.RequireMap(map));
             }
+            Assert(DigitalMap().Signals.Single(s => s.Id == "LampYellow").BitOffset == 3 &&
+                DigitalMap().Signals.Single(s => s.Id == "LampRed").BitOffset == 4, "Bestätigte Lampenadressen vertauscht");
             var extra = DigitalMap(); var b = extra.Signals.Single(s => s.Id == "MeasurementActive"); b.ByteOffset = 0; b.BitOffset = 1; b.AreaSizeBytes = 4; b.Confirmed = true;
             Reject(() => profile.RequireMap(extra));
             var other = DigitalMap(); other.InstanceName = "other"; Reject(() => profile.RequireMap(other));
@@ -145,11 +151,26 @@ internal static partial class Program
             Reject(() => new DigitalRunLimits { MaxAdvances = 50001 }.Validate());
             Reject(() => new DigitalRunLimits { WallTimeoutSeconds = 301 }.Validate());
         });
-        Test("D10", "WPF-Prozessdaten sind serialisierbar und enthalten keine SPS-Ersatzmesswerte", () =>
+        AsyncTest("D10", "Drei unabhängige SPS-Lampen über Bericht, Prozessdaten und Darstellungsframe; keine Ersatzmesswerte", async () =>
         {
-            var wire = new DigitalProgress { TimeNs = 1234567, Position = 50.2, MotorRight = true, Hall = true };
-            var copy = Json.Read<DigitalProgress>(Json.Write(wire));
-            Assert(copy.TimeNs == wire.TimeNs && copy.MotorRight && copy.Hall && copy.Position == wire.Position, "Prozessdaten verändert");
+            var endpoint = new DigitalEndpointDouble { Automatic = false };
+            endpoint.OnContinue = e => { e.LampRed = (e.Continues & 1) != 0; e.LampYellow = (e.Continues & 2) != 0; };
+            var result = await DigitalRun(endpoint, limits: new() { MaxAdvances = 4 });
+            Assert(result.Passed && result.CleanupConfirmed, "Lampentestdouble nicht beendet");
+            foreach (var sample in result.Samples)
+            {
+                var wire = DigitalProgress.From(sample);
+                var copy = Json.Read<DigitalProgress>(Json.Write(wire));
+                var view = copy.ToActuatorFrame(true);
+                Assert(copy.SchemaVersion == 2 && copy.TimeNs == sample.Coupling.VirtualTimeNs && copy.Position == sample.Plant.LeftEdgeMm,
+                    "Prozessdaten verändert");
+                Assert(view.LampRed == sample.Coupling.Applied.LampRed && view.LampYellow == sample.Coupling.Applied.LampYellow &&
+                    view.LampGreen == sample.Coupling.Applied.LampGreen && view.Sequence == sample.Coupling.Sequence,
+                    "Lampen auf dem Weg zur Darstellung verloren/vertauscht");
+                Assert(!copy.ToActuatorFrame(false).Valid && view.SpeedCommandRaw == 0, "Historischer Wert gültig oder Analogwert erfunden");
+            }
+            Assert(result.Samples.Skip(1).Select(s => (s.Coupling.Applied.LampRed ? 1 : 0) | (s.Coupling.Applied.LampYellow ? 2 : 0))
+                .SequenceEqual(new[] { 1, 2, 3, 0 }), "Rot/Gelb nicht unabhängig und gleichzeitig darstellbar");
             Assert(!typeof(DigitalProgress).GetProperties().Any(p => p.Name.Contains("MeasuredLength")), "SPS-Länge erfunden");
         });
         AsyncTest("D11", "Abbruch oder Invalidierung während Fortschrittsmeldung verhindert jede weitere CPU-Fortschaltung", async () =>

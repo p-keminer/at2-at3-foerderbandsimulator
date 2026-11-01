@@ -46,12 +46,12 @@ internal static class Fixture {
             }
 
             var owned = new LiveProcessSnapshot(LiveProcessState.Completed, "fixture", new DigitalProgress { Sequence = 2 },
-                ReportPath: "owned.json", CleanupConfirmed: true, CpuBeforeDisconnect: "Freeze / SingleStep_C", ExitCode: 0);
+                ReportPath: "owned.json", CleanupConfirmed: true, CpuBeforeDisconnect: "Freeze / SingleStep_C", ExitCode: 0, FreezeOwnershipConfirmed: true);
             check(MainWindow.CanRestoreAfterRun(owned), "Automatische Default-Freigabe nach eigenem abgeschlossenen Syncpunkt und Cleanup zulässig");
             check(MainWindow.CanRestoreAfterRun(owned with { ExitCode = 1 }), "Eigener kooperativ abgebrochener Lauf kann Default freigeben");
             foreach (var denied in new[] {
                 owned with { Latest = null }, owned with { IsActive = true }, owned with { CleanupConfirmed = false },
-                owned with { State = LiveProcessState.Faulted },
+                owned with { FreezeOwnershipConfirmed = false },
                 owned with { HardKilled = true }, owned with { ExitCode = null }, owned with { ExitCode = 2 },
                 owned with { CpuBeforeDisconnect = "Run / Default" }, owned with { ReportPath = "" },
                 owned with { Latest = new DigitalProgress { Sequence = 0 } }

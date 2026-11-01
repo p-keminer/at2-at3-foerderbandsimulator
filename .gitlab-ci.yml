@@ -29,7 +29,7 @@ offline:
     expire_in: 30 days
     paths:
       - artifacts/ci/
-      - output/AT2AT3-Offline.zip
-      - output/AT2AT3-Offline.zip.sha256
+      - output/AT2AT3-Simulator.zip
+      - output/AT2AT3-Simulator.zip.sha256
     reports:
       junit: artifacts/ci/core-tests.junit.xml
