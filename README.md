@@ -1,4 +1,4 @@
-<a id="top"></a>
+<a name="top"></a>
 
 <div align="center">
 
@@ -7,7 +7,7 @@
 
 </div>
 
-<a id="deutsch"></a>
+<a name="deutsch"></a>
 
 # AT-2 / AT-3 Förderbandsimulator
 
@@ -31,7 +31,7 @@ in S7-PLCSIM Advanced.
 
 ![Simulator mit Profilwahl und sichtbarer Anlage](docs/images/offline.png)
 
-<a id="de-voraussetzungen"></a>
+<a name="de-voraussetzungen"></a>
 
 ## Voraussetzungen
 
@@ -40,7 +40,7 @@ in S7-PLCSIM Advanced.
 - S7-PLCSIM Advanced V5.0 Update 2 für die lokale virtuelle CPU im PLCSIM-Softbus-Modus.
 
 
-<a id="de-start"></a>
+<a name="de-start"></a>
 
 ## Starten
 
@@ -60,7 +60,7 @@ Anlagenvorschau. Sie erstellt und startet keine CPU.
 Messwerte und Zähler werden in der TIA-Beobachtungstabelle geprüft. Der Simulator zeigt zusätzlich
 die Anlage und verschiedene E/A-Signale.
 
-<a id="de-tia-projekte"></a>
+<a name="de-tia-projekte"></a>
 
 ## TIA-Projekte
 
@@ -77,7 +77,7 @@ Eigene Simulatorprofile liegen unter `profiles/` neben der EXE. Zum Umziehen den
 vollständigen Anwendungsordner einschließlich dieser Profile kopieren. Die
 Konfiguration benötigt keine persönlichen absoluten Pfade.
 
-<a id="de-bauen"></a>
+<a name="de-bauen"></a>
 
 ## Selbst bauen
 
@@ -110,7 +110,7 @@ verifiziert.
 
 ---
 
-<a id="english"></a>
+<a name="english"></a>
 
 # AT-2 / AT-3 Conveyor Belt Simulator
 
@@ -134,7 +134,7 @@ controls the system.
 
 ![Simulator with profile selection and visible conveyor](docs/images/offline.png)
 
-<a id="en-voraussetzungen"></a>
+<a name="en-voraussetzungen"></a>
 
 ## Requirements
 
@@ -142,7 +142,7 @@ controls the system.
 - TIA Portal V18 to edit and download the exercise programs.
 - S7-PLCSIM Advanced V5.0 Update 2 for the local virtual CPU in PLCSIM Softbus mode.
 
-<a id="en-start"></a>
+<a name="en-start"></a>
 
 ## Getting started
 
@@ -164,7 +164,7 @@ plant preview. It does not create or start a CPU.
 Check measured values and counters in the TIA watch table. The simulator also
 displays the plant and its I/O signals.
 
-<a id="en-tia-projekte"></a>
+<a name="en-tia-projekte"></a>
 
 ## TIA projects
 
@@ -181,7 +181,7 @@ Your simulator profiles are stored in `profiles/` next to the EXE. To move the
 application, copy the entire application folder, including these profiles.
 The configuration does not require personal absolute paths.
 
-<a id="en-bauen"></a>
+<a name="en-bauen"></a>
 
 ## Building from source
 

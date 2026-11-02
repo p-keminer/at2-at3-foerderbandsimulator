@@ -1,4 +1,4 @@
-<a id="top"></a>
+<a name="top"></a>
 
 <div align="center">
 
@@ -7,7 +7,7 @@
 
 </div>
 
-<a id="deutsch"></a>
+<a name="deutsch"></a>
 
 # Anleitung: Übungsprojekte und virtuelle Siemens-SPS
 
@@ -25,7 +25,7 @@ Stand: 01.11.2026.
 
 </div>
 
-<a id="de-start"></a>
+<a name="de-start"></a>
 
 ## Start und Dateien
 
@@ -50,7 +50,7 @@ Zum Umziehen den gesamten Anwendungsordner einschließlich eigener Profile kopie
 Auf dem Zielrechner müssen die Siemens-Komponenten separat installiert sein;
 der dortige CPU-Instanzname wird im Profil eingestellt.
 
-<a id="de-profile"></a>
+<a name="de-profile"></a>
 
 ## Oberfläche und Profile
 
@@ -64,7 +64,7 @@ Die Steuerung kommt ausschließlich aus der virtuellen SPS.
 
 ---
 
-<a id="de-profil-einrichten"></a>
+<a name="de-profil-einrichten"></a>
 
 ### Profil einrichten
 
@@ -102,7 +102,7 @@ Ein Import erzeugt eine eigene Kopie. Ein Profilwechsel setzt die Anlagenvorscha
 und die angezeigte Aufzeichnung zurück; er ist erst nach vollständigem Trennen
 und Abschluss einer laufenden CPU-Rückstellung möglich.
 
-<a id="de-betrieb"></a>
+<a name="de-betrieb"></a>
 
 ## Anlage betreiben und Messwerte prüfen
 
@@ -129,7 +129,7 @@ TIA-Beobachtungstabelle geprüft.**
 
 ---
 
-<a id="de-freeze-und-laden"></a>
+<a name="de-freeze-und-laden"></a>
 
 ### Trennen, Freeze und erneutes Laden
 
@@ -150,14 +150,14 @@ Unter **Erweiterte Testarten** stehen zusätzlich ein stationärer E/A-Test und 
 begrenzter Förderband-Abnahmetest bereit. Für die normale Bedienung bleibt
 **Interaktive Verbindung** ausgewählt.
 
-<a id="de-tia-projekte"></a>
+<a name="de-tia-projekte"></a>
 
 ## TIA-V18-Übungsdateien
 
 Die Startarchive sind eigene Rekonstruktionen aus den bereitgestellten Unterlagen,
 keine originalen Hochschulvorlagen. Sie wurden nativ erzeugt und mit TIA wiederhergestellt.
 
-<a id="de-at2"></a>
+<a name="de-at2"></a>
 
 ### AT-2
 
@@ -176,7 +176,7 @@ korrigiert; die Länge als LReal liegt auf ML32. Bool-Merker bleiben M0.1, M2.5 
 M4.0 bis M4.3. Abgeschnittene Namen wurden vervollständigt.
 
 
-<a id="de-at3"></a>
+<a name="de-at3"></a>
 
 ### AT-3
 
@@ -199,7 +199,7 @@ Der optimierte DB3 enthält `HallImpulse` (Int), `StreckeMm` (LReal) und
 können diese Variablen symbolisch verwendet werden; feste DB-Offsets sind dafür
 nicht nötig. Der Testfaktor ersetzt die Kalibrierungsaufgabe nicht.
 
-<a id="de-referenz"></a>
+<a name="de-referenz"></a>
 
 ### Referenz und neuer Ausgangszustand
 
@@ -213,7 +213,7 @@ Die Übungs-CPUs V2.8 unterscheiden sich von der Referenz-CPU V3.0. Bei der
 Hardwareübersetzung gab es keine Fehler, aber zwei Warnungen zu fehlendem
 Zugriffspasswort und ungeschütztem CPU-Display.
 
-<a id="de-modell"></a>
+<a name="de-modell"></a>
 
 ## Modell und Grenzen
 
@@ -232,7 +232,7 @@ Motorweg.
 Der Referenzcontroller bleibt für automatisierte Kerntests erhalten und ist kein auswählbarer Steuermodus.
 
 
-<a id="de-pruefungen"></a>
+<a name="de-pruefungen"></a>
 
 ## Tatsächlich ausgeführte Prüfungen
 
@@ -251,7 +251,7 @@ AT-3-Visualisierung WS24/25 rev3 und lokal installierte Siemens-Dokumentation.
 
 **Hinweise zu projektinternen Fremdgrafiken stehen in den Drittanbieter-Lizenzen.**
 
-<a id="de-bauen"></a>
+<a name="de-bauen"></a>
 
 ## Bauen, testen und paketieren
 
@@ -312,7 +312,7 @@ Ausführung einer Gitlab-Pipeline bleibt somit aus.
 
 ---
 
-<a id="english"></a>
+<a name="english"></a>
 
 # Guide: exercise projects and virtual Siemens PLC
 
@@ -330,7 +330,7 @@ Last updated: 1 November 2026.
 
 </div>
 
-<a id="en-start"></a>
+<a name="en-start"></a>
 
 ## Starting the application and files
 
@@ -355,7 +355,7 @@ To move the application, copy the entire application folder, including your
 profiles. The Siemens components must be installed separately on the target
 computer; set that computer's CPU instance name in the profile.
 
-<a id="en-profile"></a>
+<a name="en-profile"></a>
 
 ## Interface and profiles
 
@@ -372,7 +372,7 @@ Control comes exclusively from the virtual PLC.
 
 ---
 
-<a id="en-profil-einrichten"></a>
+<a name="en-profil-einrichten"></a>
 
 ### Configuring a profile
 
@@ -411,7 +411,7 @@ copy. Switching profiles resets the plant preview and displayed recording;
 it is only possible after disconnecting completely and completing any CPU
 restoration in progress.
 
-<a id="en-betrieb"></a>
+<a name="en-betrieb"></a>
 
 ## Operating the plant and checking measurements
 
@@ -438,7 +438,7 @@ factor and measurement status in the TIA watch table.**
 
 ---
 
-<a id="en-freeze-und-laden"></a>
+<a name="en-freeze-und-laden"></a>
 
 ### Disconnecting, Freeze and downloading again
 
@@ -458,7 +458,7 @@ If Freeze persists, use **CPU auf Default zurückstellen** for the selected CPU.
 and a bounded conveyor acceptance test. For normal operation, keep
 **Interaktive Verbindung** (interactive connection) selected.
 
-<a id="en-tia-projekte"></a>
+<a name="en-tia-projekte"></a>
 
 ## TIA V18 exercise files
 
@@ -466,7 +466,7 @@ The starter archives are original reconstructions based on the supplied
 documents, not official university templates. They were created as native
 projects and retrieved using TIA.
 
-<a id="en-at2"></a>
+<a name="en-at2"></a>
 
 ### AT-2
 
@@ -484,7 +484,7 @@ The overlapping DInt addresses MD3/MD5 in the template were corrected to
 MD24/MD20; the length is stored as LReal at ML32. Boolean memory bits remain
 M0.1, M2.5 and M4.0 through M4.3. Truncated names were completed.
 
-<a id="en-at3"></a>
+<a name="en-at3"></a>
 
 ### AT-3
 
@@ -507,7 +507,7 @@ The optimized DB3 contains `HallImpulse` (Int), `StreckeMm` (LReal) and
 symbolically in the TIA watch table; fixed DB offsets are not needed.
 The test factor does not replace the calibration exercise.
 
-<a id="en-referenz"></a>
+<a name="en-referenz"></a>
 
 ### Reference project and a fresh starting state
 
@@ -521,7 +521,7 @@ The V2.8 exercise CPUs differ from the V3.0 reference CPU. Hardware compilation
 reported no errors, but two warnings about the missing access password and
 unprotected CPU display.
 
-<a id="en-modell"></a>
+<a name="en-modell"></a>
 
 ## Model and limitations
 
@@ -539,7 +539,7 @@ Sensors react to geometric coverage; Hall edges are generated from motor travel.
 The reference controller is retained for automated core tests and is not a
 selectable control mode.
 
-<a id="en-pruefungen"></a>
+<a name="en-pruefungen"></a>
 
 ## Checks actually performed
 
@@ -558,7 +558,7 @@ AT-3 visualization WS24/25 rev3 and locally installed Siemens documentation.
 
 **Notes on third-party graphics within the projects are in the third-party licenses.**
 
-<a id="en-bauen"></a>
+<a name="en-bauen"></a>
 
 ## Building, testing and packaging
 
