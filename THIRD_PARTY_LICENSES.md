@@ -1,7 +1,5 @@
 # Drittanbieter-Lizenzen
 
-**Dokumentationsentwurf zur Durchsicht; noch nicht zum Committen freigegeben.**
-
 ## Microsoft: dotnet-install.ps1
 
 Das unveränderte `tools/dotnet-install.ps1` stammt von Microsoft / .NET Foundation
