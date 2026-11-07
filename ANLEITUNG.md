@@ -245,6 +245,14 @@ Der Referenzcontroller bleibt für automatisierte Kerntests erhalten und ist kei
 | Build gegen installiertes V5.0-SDK vor der Anzeigeänderung | Siemens-Adapter, LiveProbe und RestoreDefault ohne Fehler und Warnungen kompiliert |
 | TIA-Projekterstellung | AT-3-Software ohne Fehler/Warnungen; AT-2 mit acht erwarteten offenen Signalen; beide Archivwiederherstellungen geprüft |
 | Exportierte TIA-Projektstruktur | 56 Prüfungen der FUP-Graphen und 42 Datei-/Konfigurationsprüfungen bestanden |
+| AT-3, zusätzliche Offlineprüfungen am 07.11.2026 | TIA-Übungsstart und separate Prüfvariante ohne Fehler und Warnungen übersetzt. 163 Prüfungen an nativen FUP-Exporten mit 45 modellierten Förderbandläufen bestanden; 15 Exportdateien nach Archivwiederherstellung inhaltlich identisch. |
+| AT-3, zusätzliche Liveprüfungen am 07.11.2026 | Vier Prüfungen mit einer separaten Prüfvariante, PLCSIM Advanced V5.0 Update 2 und dem C#-Anlagenkern samt Kopplungscontroller und V5-Adapter bestanden: 120 mm → 100 SPS-Impulse → 120 mm; 60 mm → 50 SPS-Impulse → 60 mm. Verwendeter Beispiel-Testfaktor: 1,2 mm/Impuls. |
+| Stopp/Fortsetzen und Hand/Automatik | Stopp bei Hall-HIGH ohne Zusatzimpuls; nach Fortsetzen weiterhin 100 Impulse und 120 mm. Wechsel auf Hand verwirft die Messung; Handfahrt erzeugt kein gültiges automatisches Ergebnis; Rückkehr auf Automatik ohne Wiederanlauf mitten auf der Strecke. |
+| Build und Download für diese Liveprüfung | Anlagenkern, Kopplungscontroller, V5-Adapter und separater Prüfhelfer: 0 Fehler, 0 Warnungen. Hardware-/Softwaredownload in die Test-CPU: 0 Fehler, 0 Warnungen. Alle vier Läufe regulär beendet; Test-CPU anschließend STOP / Default. |
+
+Die zusätzlichen Liveprüfungen verwendeten einen separaten Prüfhelfer zum Setzen
+der Bedienmerker und zum Lesen der tatsächlichen SPS-Messwerte. WinCC-Bedienbilder
+und die sichtbare WPF-Darstellung wurden dabei nicht geprüft.
 
 Quellen: bereitgestellte AT-2-Anleitung WS24/25 mit sechsseitigem Anhang,
 AT-3-Visualisierung WS24/25 rev3 und lokal installierte Siemens-Dokumentation.
@@ -552,6 +560,14 @@ selectable control mode.
 | Build against the installed V5.0 SDK before the display change | Siemens adapter, LiveProbe and RestoreDefault compiled without errors or warnings |
 | TIA project creation | AT-3 software without errors/warnings; AT-2 with eight expected unresolved signals; retrieval of both archives checked |
 | Exported TIA project structure | 56 FBD graph checks and 42 file/configuration checks passed |
+| AT-3, additional offline checks on 2026-11-07 | TIA starter and separate test variant compiled with no errors or warnings. 163 checks of native FBD exports, including 45 modeled conveyor runs, passed; 15 exported files were semantically identical after archive retrieval. |
+| AT-3, additional live checks on 2026-11-07 | Four checks with a separate test variant, PLCSIM Advanced V5.0 Update 2 and the C# plant core, coupling controller and V5 adapter passed: 120 mm → 100 PLC pulses → 120 mm; 60 mm → 50 PLC pulses → 60 mm. Example test factor: 1.2 mm/pulse. |
+| Stop/resume and manual/automatic | Stopping while Hall was HIGH added no pulse; resuming still resulted in 100 pulses and 120 mm. Switching to manual invalidated the measurement; manual jogging produced no valid automatic result; returning to automatic caused no restart mid-route. |
+| Build and download for this live verification | Plant core, coupling controller, V5 adapter and separate diagnostic helper: 0 errors, 0 warnings. Hardware/software download to the test CPU: 0 errors, 0 warnings. All four runs exited normally; the test CPU was subsequently in STOP / Default. |
+
+The additional live checks used a separate diagnostic helper to set command
+markers and read the actual PLC measurements. WinCC screens and the visible
+WPF rendering were not tested.
 
 Sources: supplied AT-2 instructions WS24/25 with the six-page appendix,
 AT-3 visualization WS24/25 rev3 and locally installed Siemens documentation.

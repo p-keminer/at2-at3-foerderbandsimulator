@@ -97,8 +97,10 @@ ohne Siemensinstallation möglich.
 [Lizenz](LICENSE) · [Drittanbieter](THIRD_PARTY_LICENSES.md)
 
 Die digitale Kopplung wurde zuvor am eigenen Referenzstand erprobt.
-Profilwahl, geänderte Signaladressen und Übungs-CPUs sind noch nicht live
-verifiziert.
+Zusätzlich bestand eine separate AT-3-Prüfvariante vier Liveprüfungen mit
+PLCSIM Advanced V5.0 Update 2 und dem C#-Anlagenkern. Profilwahl und geänderte
+Signaladressen sind weiterhin nicht live verifiziert. WinCC und die sichtbare
+WPF-Darstellung wurden bei diesen zusätzlichen Prüfungen nicht getestet.
 
 <div align="center">
 
@@ -202,8 +204,10 @@ can also run without a Siemens installation.
 [License](LICENSE) · [Third-party licenses](THIRD_PARTY_LICENSES.md)
 
 The digital connection was previously tried with the personal reference project.
-Profile selection, changed signal addresses and the exercise CPUs have not yet
-been verified in live operation.
+A separate AT-3 test variant additionally passed four live checks with PLCSIM
+Advanced V5.0 Update 2 and the C# plant core. Profile selection and changed
+signal addresses remain unverified in live operation. WinCC and the visible
+WPF rendering were not tested in these additional checks.
 
 <div align="center">
 

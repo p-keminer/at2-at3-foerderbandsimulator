@@ -10,8 +10,9 @@
     {
       "file": "AT3_Start_Uebung_Originalstand.zap18",
       "kind": "TIA V18 archive",
-      "sha256": "8114c564f5a79ef9cbf5fd2beee85ea02b9f6bd396a0903323751356ac3e7393",
-      "bytes": 413823
+      "sha256": "880bab8febb2c80c09553b6ea600dac5a4c384424fe5377cc17f7f5877f02ae0",
+      "bytes": 456147,
+      "revision": "AT3 V2 - 2026-11-07"
     },
     {
       "file": "AT2_AT3_Referenzprojekt.zip",
