@@ -144,6 +144,7 @@ namespace Plant.Wpf
         {
             Numbers.Require(!liveHost.Snapshot.IsActive && !liveWorkflowBusy && !RecoveryBusy, "Zuerst die SPS-Verbindung vollständig trennen.");
             Host.Reset(config); Host.Change(s => s.SetMode(OperationMode.ExternalPlc)); activeConfig = config.Copy(); plantView.Configuration = activeConfig;
+            plantView.Marking.Reset();
         }
         internal void Refresh(bool forceDetails = true)
         {

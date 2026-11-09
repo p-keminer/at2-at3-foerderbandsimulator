@@ -11,12 +11,13 @@
 
 # Anleitung: Übungsprojekte und virtuelle Siemens-SPS
 
-Stand: 01.11.2026.
+Stand: 09.11.2026.
 
 <div align="center">
 
 [![Start](https://img.shields.io/badge/Start-24292f?style=for-the-badge)](#de-start)
 [![Profile](https://img.shields.io/badge/Profile-24292f?style=for-the-badge)](#de-profile)
+[![Analog](https://img.shields.io/badge/Analog-24292f?style=for-the-badge)](#de-analog)
 [![Betrieb](https://img.shields.io/badge/Betrieb-24292f?style=for-the-badge)](#de-betrieb)
 [![TIA-Projekte](https://img.shields.io/badge/TIA--Projekte-24292f?style=for-the-badge)](#de-tia-projekte)
 [![Modell](https://img.shields.io/badge/Modell-24292f?style=for-the-badge)](#de-modell)
@@ -102,6 +103,86 @@ Ein Import erzeugt eine eigene Kopie. Ein Profilwechsel setzt die Anlagenvorscha
 und die angezeigte Aufzeichnung zurück; er ist erst nach vollständigem Trennen
 und Abschluss einer laufenden CPU-Rückstellung möglich.
 
+<a name="de-analog"></a>
+
+### Analoge AT-2-Kopplung: Potentiometer und Motordrehzahl
+
+Im Profil **AT-2 Übung** ist **Analoge SPS-Drehzahl verwenden** voreingestellt.
+Unter **Profil einrichten** werden zusätzlich zu den neun digitalen Signalen
+**Potentiometer Channel 5 · IW** und **Drehzahlvorgabe Motor · QW** zugeordnet.
+Alle AT-2-Adressen bleiben zunächst offen. TIA-Variablennamen sind frei wählbar;
+entscheidend sind Adresse, Datentyp INT und Modulkonfiguration.
+
+1. In der eigenen TIA-Arbeitskopie ein AI-Modul mit acht Spannungseingängen
+   **−10…+10 V** und ein AQ-Modul mit vier Spannungsausgängen **0…10 V** konfigurieren.
+   Die verwendeten E/A-Bereiche müssen dem automatischen Prozessabbild von OB1
+   zugeordnet sein; die Kopplung bleibt bei `SingleStep_C`.
+2. Die Adresse des Potentiometerkanals und des Motor-AQ aus TIA übernehmen,
+   z. B. als `IW…` / `QW…`. Die Bezeichnung „Channel 5“ allein bestimmt keine
+   absolute Adresse. Bei Kanalnummer 5 und AI-Startbyte B wäre sie B + 2×5;
+   maßgeblich ist die in TIA angezeigte Kanaladresse.
+3. Unter **E/A-Bereiche und digitale Geschwindigkeit** die gesamten verfügbaren
+   Bereichsgrößen in Bytes eintragen. Das jeweilige Wort muss vollständig darin
+   liegen und darf kein anderes Signal überlappen. Eine teilweise Zuordnung
+   kann gespeichert werden, ermöglicht aber keine analoge Verbindung.
+4. Unter **Analoge Modulbereiche und Anfangsstellung** AI **−10 / +10 V**, AQ
+   **0 / 10 V** und die Potentiometer-Anfangsstellung, üblicherweise **0 V**, setzen.
+   Unter **Anlagenparameter** die **Geschwindigkeit bei 10 V** und bei Bedarf
+   Beschleunigung/Verzögerung einstellen. Dies sind Modellwerte, keine Labormessung.
+5. TIA-Programm laden, CPU auf RUN / Default stellen, Profil speichern und verbinden.
+   Bei stillstehendem Band ohne aktive Motorbefehle den Prüfling links einsetzen.
+
+Der Regler **Potentiometer – SPS-Board, Channel 5** lässt sich auch bei aktiver
+Verbindung bedienen. Er überträgt seinen AI-Wert am nächsten Eingangsabgleich;
+er ändert die Motorgeschwindigkeit nicht unmittelbar. Daneben stehen getrennt
+der gewünschte Rohwert, der zuletzt übertragene AI-Wert, der tatsächlich aus der
+SPS gelesene AQ-Wert, die Ausgangsspannung und die Modellgeschwindigkeit.
+Ohne frische Verbindung werden analoge SPS-Werte als nicht verfügbar angezeigt.
+
+Das zweite Potentiometer am **Motoransteuerungsmodul** wird getrennt als fest
+auf **0 Ω / linker Anschlag** dargestellt. Eine zusätzliche elektrische Wirkung
+wird dafür nicht angenommen.
+
+| Spannung | AI bei ±10 V | AQ bei 0…10 V |
+|---|---:|---:|
+| −10 V | −27648 | unzulässig |
+| −5 V | −13824 | unzulässig |
+| 0 V | 0 | 0 |
+| 5 V | 13824 | 13824 |
+| 10 V | 27648 | 27648 |
+
+Die Übertragung verwendet signierte 16-Bit-Wörter in Siemens-Byte-Reihenfolge.
+Der normale Regler bietet 0…10 V; negative AI-Werte sind nur über die getrennte
+Diagnose-API prüfbar. Weitere dokumentierte symmetrische AI-Bereiche sind im
+Profil wählbar; die Reglerobergrenze folgt dem gewählten Bereich. Für AT-2 ±10 V
+verwenden. Der Motor-AQ bleibt auf 0…10 V begrenzt; ungültige Rohwerte führen zum
+Abbruch statt zu einer ersetzten Geschwindigkeit.
+
+**MOVE prüfen:** In der eigenen FUP-Lösung den AI-Rohwert per MOVE auf das
+zugeordnete AQ-Wort übertragen. Motorfreigaben und Richtungsverriegelung bleiben
+Teil der SPS-Lösung. Bei einem Modellwert von 100 mm/s liefern 0, 5 und 10 V nach
+der Übernahme 0, 50 und 100 mm/s, sofern eine Richtung freigegeben ist. Bei
+aktivierter Motordynamik Beschleunigung und Auslauf abwarten. AI und AQ zusätzlich
+in der TIA-Beobachtungstabelle vergleichen. Vor dem Entnehmen beide Motorbefehle
+im SPS-Programm ausschalten; AQ = 0 allein entsperrt die Prüflingsbedienung nicht.
+
+**UNSCALE prüfen:** In der eigenen FUP-Lösung Prozentwerte 35,0 und 60,0 mit
+`LO_LIM = 0.0`, `HI_LIM = 100.0` und `BIPOLAR = FALSE` in das AQ-Wort umsetzen.
+`RET_VAL` in TIA prüfen. Nur der gewählte MOVE- oder UNSCALE-Pfad darf das AQ-Wort
+beschreiben. Erwartet werden ungefähr 9677 bzw. 16589, entsprechend 3,5 bzw. 6 V
+und bei 100 mm/s Modellmaximum etwa 35 bzw. 60 mm/s. Die digitalen Ausgänge
+bestimmen weiterhin die Richtung. Zähler, Kalibrierung und Messwert bleiben in TIA.
+
+Für den bisherigen digitalen Test die Analogoption in einer Profilkopie ausschalten
+und beide Analogadressen leer lassen. Dieser Modus verwendet weiterhin neun
+BOOL-Signale und eine feste digitale Modellgeschwindigkeit. Im analogen Profil
+wirkt ausschließlich die tatsächliche SPS-AQ-Vorgabe auf die Geschwindigkeit.
+
+MOVE, UNSCALE, Motorsteuerung, Messung und Ampel werden nicht als fertige
+Schülerlösung in das AT-2-Startarchiv eingefügt. Die Simulation bildet
+die zwei benötigten Analogsignale ab, nicht sämtliche unbenutzten Modulkanäle,
+Verdrahtungsfehler, elektrische Kennlinien oder reale Kalibrierabweichungen.
+
 <a name="de-betrieb"></a>
 
 ## Anlage betreiben und Messwerte prüfen
@@ -122,6 +203,21 @@ Solange ein Motorbefehl aktiv ist oder das Band noch ausläuft, bleibt das
 Einsetzen und Entnehmen gesperrt. Betriebsfreigaben und gespeicherte Ablaufzustände
 werden im SPS-Programm beziehungsweise über TIA oder das eigene HMI bedient.
 Der Simulator schreibt keine Controller-Merker.
+
+### Bandmarkierung und Kalibrierfahrt
+
+Die helle Bandmarkierung mit Zeigerspitze folgt dem tatsächlichen Bandweg.
+Der Maßstab hat Teilstriche alle **10 mm**, die Markenposition wird zusätzlich
+auf **0,1 mm** angezeigt. Bei verbundener SPS, Stillstand und ausgeschalteten
+Motorbefehlen setzt **Bandmarkierung auf 0** nur die sichtbare Markenreferenz.
+Bandweg, Hallphase und SPS-Zähler bleiben erhalten.
+
+Für die Kalibrierübung: Markierung auf 0 setzen, den SPS-Impulszähler über TIA
+zurücksetzen und das Band durch die eigene SPS-Logik ungefähr 100 mm nach rechts
+fahren. Anhalten und die tatsächlich angezeigte Markenposition sowie den
+SPS-Impulszähler notieren. Dreimal wiederholen und den Mittelwert der drei
+Verhältnisse Strecke/Impulse bilden. Verlässt die Markierung die sichtbare Skala,
+wird dies angezeigt; sie springt nicht automatisch zum Anfang zurück.
 
 Kalibrierung, Messablauf und Hand-/Automatikbetrieb werden in der SPS programmiert.
 **Messwert, Hallzähler, Kalibrierfaktor und Messstatus werden du in der
@@ -172,8 +268,10 @@ beabsichtigt:** zwei in FC2, sechs in FC6. Der vollständige Stand ist noch nich
 lauffähig. Das Simulatorprofil enthält deshalb zunächst keine I/O-Adressen.
 
 Die überlappenden DInt-Adressen MD3/MD5 aus der Vorlage wurden zu MD24/MD20
-korrigiert; die Länge als LReal liegt auf ML32. Bool-Merker bleiben M0.1, M2.5 und
+korrigiert; die Länge als LReal liegt auf M10.0. Bool-Merker bleiben M0.1, M2.5 und
 M4.0 bis M4.3. Abgeschnittene Namen wurden vervollständigt.
+
+**Adresskorrektur vom 09.11.2026:** Das Startarchiv enthält für „Länge in mm“ jetzt `%M10.0` mit Datentyp LReal, entsprechend der Versuchsanleitung. Der zuvor fehlerhafte Eintrag `%ML32` ist ersetzt. Die Variable belegt Merkerbyte 10 bis 17.
 
 
 <a name="de-at3"></a>
@@ -235,6 +333,47 @@ Der Referenzcontroller bleibt für automatisierte Kerntests erhalten und ist kei
 <a name="de-pruefungen"></a>
 
 ## Tatsächlich ausgeführte Prüfungen
+
+Die folgenden Ergebnisse vom **08.11.2026** gelten für die analoge Erweiterung;
+die ältere Prüfhistorie steht anschließend unverändert darunter.
+
+| Prüfung der analogen Erweiterung | Tatsächlich ausgeführtes Ergebnis |
+|---|---|
+| Releasebuild und Regression | `build.ps1 -Test -UiSmoke -SiemensCompile`: 128/128 Prüfgruppen, 779 Assertions; 135 WPF-Prüfungen bestanden. Adapter, LiveProbe und RestoreDefault: 0 Fehler, 0 Warnungen. |
+| Automatisierte Analogtests ohne Siemens | Skalierung/Vorzeichen/Bytefolge, Adressgrenzen und Überlappung, Pflichtwörter, digitaler Rückweg, dynamischer Bedienkanal, unveränderte Geschwindigkeitsautorität der SPS, ungültige AQ-Werte und fehlende/vertauschte Prozessdaten geprüft. WPF-Profilformular inklusive Speichern/Laden der Analogadressen und Anfangsstellung geprüft. |
+| Echte AI-Liveprüfung | In einer Verbindung las das FUP-Programm 0, 13824, 27648, −13824 und −27648 für 0, 5, 10, −5 und −10 V. Negative Werte nur im privaten Diagnosetest; Motor aus. |
+| Echter MOVE / UNSCALE | MOVE: AQ 0/13824/27648 → Modellgeschwindigkeit 0/50/100 mm/s. Nativer UNSCALE: 35 % → AQ 9677 → 35,0007 mm/s rechts; 60 % → AQ 16589 → −60,0007 mm/s links. Modellmaximum 100 mm/s. |
+| Gesamtanlage mit echtem SPS-Zähler | Bei 50 mm/s: 120-mm-Prüfling → 100 SPS-Impulse → 120 mm, Messung gültig. Testfaktor 1,2 mm/Impuls. Induktive/optische Sensoren, Lampen sowie Pause mit AQ = 0 ohne zusätzliche Bewegung oder Zählerimpulse bestanden. |
+| Richtungskonflikt und ungültiger AQ | Beide Richtungsanforderungen bei AQ 16589: SPS schaltet beide Motorbefehle aus. AQ −13824: Produktionsadapter verwirft den Wert und beendet die Kopplung; keine Klemmung auf 0. |
+| Vollständiger Bedienkanal mit echter SPS | Tatsächlicher WPF-Prozesshost → LiveProbe → V5-Adapter → SPS: leer verbinden, Prüfling einsetzen, Potentiometer 0→5→10→0 V während derselben Sitzung, AQ/Modellgeschwindigkeit 0→50→100→0, Motor ausschalten und Prüfling entfernen. Kontrolliertes Trennen ohne Prozessabbruch bestanden. |
+| Grenzen und Cleanup | Sieben Kern-/Adapter-Livefälle und ein Live-Prozesskanaltest bestanden. Alle Prüfungen begrenzt; Test-CPU danach jeweils STOP / Default. Ein vorheriger 100-mm/s-Messlauf brach wegen zu großem tatsächlichen Synchronisationsabstand korrekt mit Aliasingfehler ab; der Schutz wurde beibehalten. |
+
+Verwendet wurde ausschließlich die bestehende lokale Softbus-Test-CPU
+`AT3_V2_Test_20261107` mit einer **privaten, getrennten Prüfkopie**, AI `IW14`
+und AQ `QW4`. Diese Adressen gelten nur für deren nachgewiesene Hardwarekonfiguration.
+Die Prüfkopie wurde mit nativen V18-Openness-Schnittstellen geladen; keine
+Computer-Use-/UI-Automation. Nach der Test-IP-Anpassung gab die Hardwareübersetzung
+zwei Zugriffsschutzwarnungen aus, keine Fehler; Download: 0 Fehler, 0 Warnungen.
+Bei den Analogprüfungen vom 08.11.2026 blieben alle drei veröffentlichten
+TIA-Pakete unverändert.
+
+Die sichtbare WPF-Analogbedienung zusammen mit der SPS, WinCC und reale Hardware
+wurden nicht live geprüft. WPF-Darstellung und Formularprüfung verwenden ausdrücklich
+Siemensfreie Testdaten. Der reale Prozesskanaltest ist davon getrennt.
+
+**Ergänzung 09.11.2026 – Bandmarkierung und Maßstab:** Releasebuild ohne Fehler
+oder Warnungen; 129 Prüfgruppen mit 803 Assertions und 143 WPF-Prüfungen bestanden.
+Geprüft wurden 10-mm-Teilstriche, gerenderte Markierungen bei 0/100 mm, drei
+Modell-Kalibrierfahrten, Rückwärtsfahrt und Nullsetzen ohne Modell-/Hall-Reset.
+Der echte UI-Button ist bei Bewegung oder historischen Daten gesperrt und setzt
+bei frischem Stillstand ausschließlich die Markenreferenz. Diese Ergänzung wurde
+ohne Siemens-Verbindung geprüft; kein neuer SPS-Livelauf.
+
+**Adressprüfung 09.11.2026:** Das korrigierte AT-2-Startarchiv wurde mit TIA V18
+archiviert, erneut dearchiviert und exportiert: „Länge in mm“ bleibt LReal auf
+`%M10.0`. Die übrigen Variablen und das Bausteininventar sind unverändert.
+Die Übersetzung meldet dieselben acht beabsichtigten Fehler wegen fehlender
+Übungssignale wie zuvor, keine Warnungen. Kein Download in eine CPU.
 
 | Prüfung | Ergebnis / Stand |
 |---|---|
@@ -324,12 +463,13 @@ Ausführung einer Gitlab-Pipeline bleibt somit aus.
 
 # Guide: exercise projects and virtual Siemens PLC
 
-Last updated: 1 November 2026.
+Last updated: 9 November 2026.
 
 <div align="center">
 
 [![Start](https://img.shields.io/badge/Start-24292f?style=for-the-badge)](#en-start)
 [![Profiles](https://img.shields.io/badge/Profiles-24292f?style=for-the-badge)](#en-profile)
+[![Analogue](https://img.shields.io/badge/Analogue-24292f?style=for-the-badge)](#en-analog)
 [![Operation](https://img.shields.io/badge/Operation-24292f?style=for-the-badge)](#en-betrieb)
 [![TIA projects](https://img.shields.io/badge/TIA_projects-24292f?style=for-the-badge)](#en-tia-projekte)
 [![Model](https://img.shields.io/badge/Model-24292f?style=for-the-badge)](#en-modell)
@@ -419,6 +559,81 @@ copy. Switching profiles resets the plant preview and displayed recording;
 it is only possible after disconnecting completely and completing any CPU
 restoration in progress.
 
+<a name="en-analog"></a>
+
+### Analogue AT-2 coupling: potentiometer and motor speed
+
+The **AT-2 Übung** profile enables **Analoge SPS-Drehzahl verwenden** by default.
+In **Profil einrichten**, assign **Potentiometer Channel 5 · IW** and
+**Drehzahlvorgabe Motor · QW** in addition to the nine digital signals. All AT-2
+addresses are initially blank. TIA variable names are freely selectable; the
+addresses, INT data type and module configuration determine the connection.
+
+1. In your TIA working copy, configure an eight-channel voltage AI module for
+   **−10…+10 V** and a four-channel voltage AQ module for **0…10 V**. Assign the
+   used I/O areas to OB1's automatic process image. Coupling retains `SingleStep_C`.
+2. Copy the potentiometer channel address and motor AQ address from TIA as
+   `IW…` / `QW…`. “Channel 5” does not specify an absolute address. For channel
+   number 5 and AI start byte B, it would be B + 2×5; use the actual channel
+   address displayed in TIA.
+3. Under **E/A-Bereiche und digitale Geschwindigkeit**, enter the total available
+   area sizes in bytes. Each complete word must fit and must not overlap another
+   signal. Incomplete mappings can be saved but cannot establish analogue coupling.
+4. Under **Analoge Modulbereiche und Anfangsstellung**, set AI **−10 / +10 V**,
+   AQ **0 / 10 V**, and the initial potentiometer voltage, normally **0 V**.
+   Under **Anlagenparameter**, configure **Geschwindigkeit bei 10 V** and optional
+   acceleration/deceleration. These are model parameters, not lab measurements.
+5. Download your TIA program, set the CPU to RUN / Default, save the profile and
+   connect. Insert the workpiece on the left once the belt is stationary and
+   both motor commands are off.
+
+**Potentiometer – SPS-Board, Channel 5** remains adjustable while connected. Its
+AI word is published at the next input exchange; it does not directly change
+motor speed. The requested raw value, last published AI word, actual AQ word
+read from the PLC, output voltage and model speed are displayed separately.
+Without a fresh connection, analogue PLC values are shown as unavailable.
+
+The separate potentiometer on the **motor control module** is displayed as
+fixed at **0 Ω / left stop**. No additional electrical effect is assumed.
+
+| Voltage | AI at ±10 V | AQ at 0…10 V |
+|---|---:|---:|
+| −10 V | −27648 | invalid |
+| −5 V | −13824 | invalid |
+| 0 V | 0 | 0 |
+| 5 V | 13824 | 13824 |
+| 10 V | 27648 | 27648 |
+
+The exchange uses signed 16-bit words in Siemens byte order. Normal potentiometer
+operation covers 0…10 V; negative AI values are available only through the separate
+diagnostic API. Other documented symmetric AI ranges can be selected in the profile;
+the slider maximum follows the selected range. Use ±10 V for AT-2. Motor AQ remains
+restricted to 0…10 V; invalid raw words abort the session rather than substituting speed.
+
+**Check MOVE:** In your FBD solution, MOVE the AI raw value to the mapped AQ word.
+Motor permissions and direction interlocking remain PLC tasks. With a model
+maximum of 100 mm/s, 0, 5 and 10 V produce 0, 50 and 100 mm/s after adoption,
+provided a direction is enabled. Allow for acceleration/deceleration if enabled.
+Also compare AI and AQ in the TIA watch table. Turn off both PLC motor commands
+before removing the workpiece; AQ = 0 alone does not unlock workpiece handling.
+
+**Check UNSCALE:** In your FBD solution, convert 35.0 and 60.0 percent to the AQ
+word with `LO_LIM = 0.0`, `HI_LIM = 100.0` and `BIPOLAR = FALSE`. Check `RET_VAL`
+in TIA. Only the selected MOVE or UNSCALE path may write the AQ word. Expected
+values are approximately 9677 and 16589: 3.5 and 6 V, or about 35 and 60 mm/s
+at a 100 mm/s model maximum. Digital outputs still determine direction.
+Counters, calibration and measured length remain in TIA.
+
+To retain the previous digital test, disable analogue operation in a profile copy
+and leave both analogue addresses blank. This mode still uses nine BOOL signals
+and a fixed digital model speed. The analogue profile uses the actual PLC AQ
+command exclusively to determine speed.
+
+MOVE, UNSCALE, motor control, measurement and lights are not supplied as completed
+student solutions in the AT-2 starter archive. The simulator exchanges
+the two required analogue signals, not every unused module channel, wiring fault,
+electrical characteristic or real calibration deviation.
+
 <a name="en-betrieb"></a>
 
 ## Operating the plant and checking measurements
@@ -439,6 +654,20 @@ Insertion and removal remain disabled while a motor command is active or the
 belt is still slowing down. Operating permissions and stored sequence states
 are controlled by the PLC program, TIA or your own HMI. The simulator does not
 write controller memory bits.
+
+### Belt marking and calibration run
+
+The light belt marking and its pointer follow actual belt travel. The ruler has
+ticks every **10 mm**; marker position is additionally displayed to **0.1 mm**.
+While connected, with standstill confirmed and both motor commands off,
+**Bandmarkierung auf 0** sets only the visual marker reference. Belt travel,
+Hall phase and PLC counters are preserved.
+
+For the calibration exercise, zero the marking, reset the PLC pulse counter
+through TIA and use your PLC logic to move the belt approximately 100 mm right.
+Stop and record the actual displayed marker position and PLC pulse count.
+Repeat three times and average the three distance/pulse ratios. If the marking
+leaves the visible scale, this is indicated; it does not jump back to the start.
 
 Calibration, the measurement sequence and manual/automatic operation are
 programmed in the PLC. **Check the measured value, Hall counter, calibration
@@ -489,8 +718,10 @@ missing global signals are intentional:** two in FC2 and six in FC6. The complet
 project is not yet runnable. The simulator profile therefore has no I/O addresses initially.
 
 The overlapping DInt addresses MD3/MD5 in the template were corrected to
-MD24/MD20; the length is stored as LReal at ML32. Boolean memory bits remain
+MD24/MD20; the length is stored as LReal at M10.0. Boolean memory bits remain
 M0.1, M2.5 and M4.0 through M4.3. Truncated names were completed.
+
+**Address correction dated 9 November 2026:** The starter archive now assigns `%M10.0` with data type LReal to “Länge in mm”, matching the lab instructions. The former invalid `%ML32` entry has been replaced. The variable occupies memory bytes 10 through 17.
 
 <a name="en-at3"></a>
 
@@ -550,6 +781,46 @@ selectable control mode.
 <a name="en-pruefungen"></a>
 
 ## Checks actually performed
+
+The following results dated **8 November 2026** apply to the analogue extension;
+the earlier verification history remains below.
+
+| Analogue extension check | Result actually obtained |
+|---|---|
+| Release build and regression | `build.ps1 -Test -UiSmoke -SiemensCompile`: 128/128 test groups, 779 assertions; 135 WPF checks passed. Adapter, LiveProbe and RestoreDefault: 0 errors, 0 warnings. |
+| Automated analogue tests without Siemens | Scaling/sign/byte order, address limits and overlap, required words, digital compatibility, live control channel, unchanged PLC speed authority, invalid AQ and missing/mismatched process data checked. WPF profile form checked, including saved/reloaded analogue addresses and initial voltage. |
+| Actual AI live test | Within one connection, the FBD program read 0, 13824, 27648, −13824 and −27648 for 0, 5, 10, −5 and −10 V. Negative values were limited to the private diagnostic test; motor off. |
+| Actual MOVE / UNSCALE | MOVE: AQ 0/13824/27648 → model speed 0/50/100 mm/s. Native UNSCALE: 35 % → AQ 9677 → 35.0007 mm/s right; 60 % → AQ 16589 → −60.0007 mm/s left. Model maximum 100 mm/s. |
+| Complete plant with actual PLC counter | At 50 mm/s: 120-mm workpiece → 100 PLC pulses → 120 mm, measurement valid. Test factor 1.2 mm/pulse. Inductive/optical sensors, lights and an AQ = 0 pause without added motion or counter pulses passed. |
+| Direction conflict and invalid AQ | Both direction requests with AQ 16589: PLC turns both motor commands off. AQ −13824: production adapter rejects the value and ends coupling; no clamping to zero. |
+| Complete control channel with actual PLC | Actual WPF process host → LiveProbe → V5 adapter → PLC: connect empty, insert workpiece, change potentiometer 0→5→10→0 V within the same session, AQ/model speed 0→50→100→0, turn motor off and remove workpiece. Controlled disconnection passed without killing the process. |
+| Limits and cleanup | Seven core/adapter live cases and one live process-channel case passed. Every test was bounded; test CPU subsequently STOP / Default. An earlier 100-mm/s measurement run correctly aborted on an excessive actual synchronization gap with an aliasing error; the protection was retained. |
+
+Only the existing local Softbus test CPU `AT3_V2_Test_20261107` was used, with a
+**private, separate test copy**, AI `IW14` and AQ `QW4`. These addresses apply
+only to its verified hardware configuration. The copy was downloaded through
+native V18 Openness interfaces; no Computer Use/UI Automation. After changing
+the test project's IP, hardware compilation reported two access-protection
+warnings and no errors; download: 0 errors, 0 warnings. During the analogue checks
+on 8 November 2026, all three published TIA packages remained unchanged.
+
+Visible WPF analogue interaction together with the PLC, WinCC and physical
+hardware were not tested live. WPF rendering and form checks explicitly use
+Siemens-free test data. The actual process-channel test is separate.
+
+**Update 9 November 2026 – belt marking and ruler:** Release build without errors
+or warnings; 129 test groups with 803 assertions and 143 WPF checks passed.
+Checks covered 10-mm ticks, rendered markings at 0/100 mm, three model calibration
+runs, reverse motion and zeroing without resetting the model or Hall phase.
+The actual UI button is disabled during motion or with historical data; with fresh
+standstill it changes only the marker reference. This update was checked without
+a Siemens connection; no additional PLC live run was performed.
+
+**Address verification, 9 November 2026:** The corrected AT-2 starter archive was
+archived, retrieved again and exported using TIA V18: “Länge in mm” remains LReal
+at `%M10.0`. All other variables and the block inventory are unchanged.
+Compilation reports the same eight intentional errors for missing exercise
+signals as before, with no warnings. No download to a CPU was performed.
 
 | Check | Result / state |
 |---|---|

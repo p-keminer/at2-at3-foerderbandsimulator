@@ -27,6 +27,7 @@ namespace Plant.Wpf
         public bool CpuStepsApproved { get; set; }
         public bool TiaConfirmed { get; set; }
         internal string ExpectedInstanceName { get; set; } = "";
+        internal bool ExpectedAnalog { get; set; }
     }
     internal sealed record LiveProcessSnapshot(LiveProcessState State, string Detail,
         DigitalProgress? Latest = null, string ReportPath = "", bool IsActive = false,
@@ -55,6 +56,7 @@ namespace Plant.Wpf
         private string? protocolError;
         private long lastSampleTicks;
         private bool finalizing;
+        private bool expectedAnalog;
         private int generation;
         private bool childTerminationUnconfirmed;
         private readonly SemaphoreSlim inputGate = new(1, 1);
@@ -73,6 +75,7 @@ namespace Plant.Wpf
         private static DigitalProgress? Copy(DigitalProgress? value) => value == null ? null : new DigitalProgress
         {
             SchemaVersion = value.SchemaVersion, TimeNs = value.TimeNs, Sequence = value.Sequence,
+            AnalogMode = value.AnalogMode, PotiRaw = value.PotiRaw, SpeedCommandRaw = value.SpeedCommandRaw,
             WorkpieceCommandsSupported = value.WorkpieceCommandsSupported, WorkpieceChange = value.WorkpieceChange?.Copy(),
             Position = value.Position, Length = value.Length, MotorMm = value.MotorMm, BeltMm = value.BeltMm,
             MotorVelocity = value.MotorVelocity, ObjectVelocity = value.ObjectVelocity, Present = value.Present,
@@ -103,6 +106,33 @@ namespace Plant.Wpf
             (Stopwatch.GetTimestamp() - lastSampleTicks) / (double)Stopwatch.Frequency <= 2 &&
             WorkpieceHandling.IsStopped(current.Latest.MotorRight, current.Latest.MotorLeft, current.Latest.MotorVelocity, current.Latest.ObjectVelocity);
         public bool CanChangeWorkpiece { get { lock (gate) return CanChangeWorkpieceCore(); } }
+        internal bool TryGetStoppedBeltDistance(out double beltMm)
+        {
+            lock (gate)
+            {
+                beltMm = 0;
+                if (!current.IsActive || current.State != LiveProcessState.Streaming || current.StopRequested || finalizing || current.Latest == null ||
+                    (Stopwatch.GetTimestamp() - lastSampleTicks) / (double)Stopwatch.Frequency > 2 ||
+                    !WorkpieceHandling.IsStopped(current.Latest.MotorRight, current.Latest.MotorLeft, current.Latest.MotorVelocity, current.Latest.ObjectVelocity)) return false;
+                beltMm = current.Latest.BeltMm; return true;
+            }
+        }
+        public async Task SetPotentiometerAsync(double voltage)
+        {
+            int owner;
+            lock (gate)
+            {
+                Numbers.Require(Numbers.Finite(voltage) && voltage >= 0 && voltage <= 10, "Potentiometer benötigt 0…10 V.");
+                Numbers.Require(current.IsActive && current.State == LiveProcessState.Streaming && !current.StopRequested && !finalizing &&
+                    current.Latest?.AnalogMode == true && (Stopwatch.GetTimestamp() - lastSampleTicks) / (double)Stopwatch.Frequency <= 2,
+                    "Keine frische analoge SPS-Verbindung.");
+                owner = generation;
+            }
+            var send = SendInputLineAsync("POTI " + voltage.ToString("R", CultureInfo.InvariantCulture), owner);
+            if (await Task.WhenAny(send, Task.Delay(1000)).ConfigureAwait(false) != send)
+            { Fault("Potentiometerbefehl konnte nicht fristgerecht gesendet werden.", owner); throw new TimeoutException("Potentiometer-Steuerkanal blockiert."); }
+            await send.ConfigureAwait(false);
+        }
         public async Task<WorkpieceCommandResult> ChangeWorkpieceAsync(string action, double length)
         {
             TaskCompletionSource<WorkpieceCommandResult> reply; WorkpieceCommand command;
@@ -191,6 +221,7 @@ namespace Plant.Wpf
             var profile = Json.Read<DigitalCycleProfile>(File.ReadAllText(request.ProfilePath));
             var map = Json.Read<SignalMap>(File.ReadAllText(request.MapPath)); profile.RequireMap(map);
             request.ExpectedInstanceName = map.InstanceName!;
+            request.ExpectedAnalog = profile.UsesAnalog;
             profile.ConfigurePlant(Json.LoadProfile(request.PlantPath));
             Numbers.Require(!request.Limits.InteractiveSession || !Json.LoadProfile(request.PlantPath).InitialPresent,
                 "Interaktive Verbindung muss ohne Prüfling beginnen.");
@@ -226,6 +257,7 @@ namespace Plant.Wpf
                 completion = done = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 protocolError = null; lastSampleTicks = 0; finalizing = false;
                 ownerGeneration = ++generation; samples.Clear();
+                expectedAnalog = request.ExpectedAnalog;
                 current = new(LiveProcessState.Connecting, "Verbinde lokale CPU „" + request.ExpectedInstanceName + "“…",
                     ReportPath: request.ReportPath, IsActive: true, StationaryTest: request.Limits.RequireStationary,
                     InteractiveSession: request.Limits.InteractiveSession);
@@ -453,22 +485,31 @@ namespace Plant.Wpf
                     return;
                 }
                 var sample = Json.Read<DigitalProgress>(line.Substring(7));
+                if (sample.AnalogMode)
+                {
+                    var fields = (Dictionary<string, object>)new JavaScriptSerializer().DeserializeObject(line.Substring(7));
+                    Numbers.Require(new[] { "PotiRaw", "SpeedCommandRaw" }.All(name => fields.Keys.Any(key => string.Equals(key, name, StringComparison.OrdinalIgnoreCase))),
+                        "Analogdaten fehlen im Adapterframe; kein Ersatz durch Nullwerte.");
+                }
                 Numbers.Require(sample.SchemaVersion == DigitalProgress.CurrentSchemaVersion && sample.Sequence >= 1 && sample.TimeNs >= 0 && sample.GeneratedRisingEdges >= 0,
                     "Ungültige Version/Zeit/Sequenz in Adapterdaten.");
                 Numbers.Require(new[] { sample.Position, sample.Length, sample.MotorMm, sample.BeltMm, sample.MotorVelocity, sample.ObjectVelocity }.All(Numbers.Finite) && sample.Length > 0,
                     "Ungültige Modellwerte in Adapterdaten.");
                 Numbers.Require(!(sample.MotorRight && sample.MotorLeft), "Gleichzeitige Richtungsbefehle im Adapterdatenstrom.");
+                Numbers.Require(sample.AnalogMode ? Analog.OutputInNominalRange(sample.SpeedCommandRaw) && sample.PotiRaw >= -Analog.Nominal && sample.PotiRaw <= Analog.Nominal : sample.SpeedCommandRaw == 0 && sample.PotiRaw == 0,
+                    "Ungültige Analogwörter oder Analogwerte im digitalen Profil.");
                 lock (gate)
                 {
                     if (!current.IsActive || generation != ownerGeneration) return;
                     Numbers.Require(!finalizing, "SAMPLE nach FINALIZING-Abschlussmarker ist unzulässig.");
+                    Numbers.Require(sample.AnalogMode == expectedAnalog, "Adapter meldet einen anderen Analog-/Digitalbetrieb als das freigegebene Profil.");
                     if (protocolError != null) return;
                     var previous = current.Latest;
                     Numbers.Require(previous == null ? sample.Sequence == 1 && sample.TimeNs == 0 : sample.Sequence == previous.Sequence + 1 && sample.TimeNs > previous.TimeNs,
                         "Fehlender, doppelter oder zeitlich falscher Adapter-Snapshot.");
                     Numbers.Require(samples.Count < MaxQueuedSamples, "Mehr als 50001 ungelesene Adapter-Snapshots; Kopplung wird angehalten.");
                     current = current with { State = current.StopRequested ? LiveProcessState.Stopping : LiveProcessState.Streaming,
-                        Detail = "Digitaler SPS-Austausch aktiv.", Latest = sample };
+                        Detail = sample.AnalogMode ? "Analoger und digitaler SPS-Austausch aktiv." : "Digitaler SPS-Austausch aktiv.", Latest = sample };
                     if (sample.WorkpieceChange is WorkpieceCommandResult change)
                     {
                         Numbers.Require(sample.WorkpieceCommandsSupported && workpieceReply != null && workpieceCommand != null &&
@@ -497,7 +538,7 @@ namespace Plant.Wpf
                     throw new InvalidOperationException("Digitaler Ergebnisabschnitt fehlt.");
                 bool Bool(string key) => result.TryGetValue(key, out var value) && value is bool b && b;
                 string? Text(string key) => result.TryGetValue(key, out var value) ? value as string : null;
-                Numbers.Require(Text("Profile") == DigitalCycleProfile.ProfileId, "Ergebnis gehört nicht zum digitalen C-Profil mit neun Signalen.");
+                Numbers.Require(Text("Profile") == DigitalCycleProfile.ProfileId, "Ergebnis gehört nicht zum freigegebenen C-Profil.");
                 string cpu = "Ungeprüft";
                 if (result.TryGetValue("BeforeDisconnect", out var inspectValue) && inspectValue is IDictionary<string, object> inspect)
                 {
@@ -518,7 +559,7 @@ namespace Plant.Wpf
                 bool canceled = nativeError != null && (nativeError.Contains("OperationCanceledException") || nativeError.Contains("TaskCanceledException"));
                 bool controlledStop = stopped && cleanup && frozen && streamError == null && Text("CleanupError") == null && Text("InspectionError") == null &&
                     exitCode == 1 && Text("EndReason") == "FaultOrCanceled" && canceled;
-                string detail = passed ? (Snapshot.InteractiveSession ? "SPS-Verbindung kontrolliert getrennt. " : "Begrenzter digitaler Lauf beendet. ") : controlledStop ? "Kopplung kontrolliert getrennt; Lauf abgebrochen. " : "Digitaler Lauf fehlgeschlagen oder unbestätigt. ";
+                string detail = passed ? (Snapshot.InteractiveSession ? "SPS-Verbindung kontrolliert getrennt. " : "Begrenzter SPS-Lauf beendet. ") : controlledStop ? "Kopplung kontrolliert getrennt; Lauf abgebrochen. " : "SPS-Lauf fehlgeschlagen oder unbestätigt. ";
                 detail += "Letzter CPU-Zustand: " + cpu + ". Nach Dispose nicht erneut verbunden; kein Default-Reset. Bericht: " + path;
                 // Ownership is established by our confirmed samples, not by the final
                 // RUN/STOP state. STOP must also release SingleStep_C after clean disposal.

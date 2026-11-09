@@ -24,12 +24,12 @@
                 }
                 if (run.Passed && run.EndReason == "Disconnected") return "SPS-Verbindung kontrolliert getrennt.";
             }
-            if (run.IsActive) return run.StationaryTest ? "Stationärer E/A-Test läuft · keine Bandfahrt." : "Digitaler Lauf aktiv · SPS steuert das Band.";
+            if (run.IsActive) return run.StationaryTest ? "Stationärer E/A-Test läuft · keine Bandfahrt." : "SPS-Lauf aktiv · SPS steuert das Band.";
             if (run.State == LiveProcessState.Disconnected) return "Noch kein SPS-Test gestartet.";
             if (run.Passed && run.StationaryTest)
                 return "Stationärer E/A-Test beendet. Kein Förderbanddurchlauf ausgeführt. Für eine Fahrt die Testart Förderbanddurchlauf wählen.";
             if (run.Passed && run.TransportCompleted) return "Förderbanddurchlauf bestanden · Endabschaltung bestätigt.";
-            if (run.Passed) return "Begrenzter digitaler Austausch beendet · vollständiger Transport nicht bestätigt.";
+            if (run.Passed) return "Begrenzter SPS-Austausch beendet · vollständiger Transport nicht bestätigt.";
             if (run.StopRequested && run.State == LiveProcessState.Completed) return "SPS-Test abgebrochen und getrennt · kein bestandener Durchlauf.";
             return "SPS-Test nicht bestanden. " + (run.Error ?? (run.EndReason == "AdvanceLimit" || run.EndReason == "VirtualTimeLimit"
                 ? "Laufgrenze erreicht, vollständige Fahrt nicht bestätigt. SPS-Motorbefehle und Betriebsfreigaben in TIA prüfen."

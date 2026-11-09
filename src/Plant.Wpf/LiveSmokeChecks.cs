@@ -31,12 +31,12 @@ internal static class Fixture {
   static readonly TextReader input=new StreamReader(Console.OpenStandardInput(),new UTF8Encoding(false,true),true);
   static string Value(string[] args, string name) { int i=Array.IndexOf(args,name); return i<0?"":args[i+1]; }
   static void Sample(int n) {
-    Console.WriteLine("SAMPLE {\"SchemaVersion\":2,\"Sequence\":"+n+",\"TimeNs\":"+((n-1)*1000000L)+",\"Position\":"+(50+n)+",\"Length\":120,\"MotorMm\":"+n+",\"BeltMm\":"+n+",\"MotorVelocity\":100,\"ObjectVelocity\":100,\"Present\":true,\"LeftIdeal\":true,\"LeftDetected\":true,\"Left\":true,\"Optical\":false,\"Right\":false,\"Hall\":true,\"MotorRight\":true,\"MotorLeft\":false,\"LampGreen\":true,\"LampYellow\":true,\"LampRed\":true,\"GeneratedRisingEdges\":"+n+"}");
+    Console.WriteLine("SAMPLE {\"SchemaVersion\":3,\"Sequence\":"+n+",\"TimeNs\":"+((n-1)*1000000L)+",\"Position\":"+(50+n)+",\"Length\":120,\"MotorMm\":"+n+",\"BeltMm\":"+n+",\"MotorVelocity\":100,\"ObjectVelocity\":100,\"Present\":true,\"LeftIdeal\":true,\"LeftDetected\":true,\"Left\":true,\"Optical\":false,\"Right\":false,\"Hall\":true,\"MotorRight\":true,\"MotorLeft\":false,\"LampGreen\":true,\"LampYellow\":true,\"LampRed\":true,\"GeneratedRisingEdges\":"+n+"}");
     Console.Out.Flush();
   }
   static void WorkpieceSample(int n, bool present, double position, bool moving, object change) {
-    var value = new { SchemaVersion=2, WorkpieceCommandsSupported=true, WorkpieceChange=change,
-      Sequence=n, TimeNs=(n-1)*1000000L, Position=position, Length=120, MotorMm=0, BeltMm=0,
+    var value = new { SchemaVersion=3, WorkpieceCommandsSupported=true, WorkpieceChange=change,
+      Sequence=n, TimeNs=(n-1)*1000000L, Position=position, Length=120, MotorMm=0, BeltMm=275,
       MotorVelocity=moving?100:0, ObjectVelocity=moving?100:0, Present=present,
       LeftIdeal=present&&position<100, LeftDetected=present&&position<100, Left=present&&position<100,
       Optical=false, Right=present&&position>800, RightIdeal=present&&position>800, RightDetected=present&&position>800,
@@ -153,6 +153,7 @@ internal static class Fixture {
             check(!rows.Any(r => r.Signal == "MeasuredLengthMm" || r.Signal == "ControllerPulseCount" || r.Signal == "MeasurementActive"), "SPS-Messwert, SPS-Zähler und Messstatus werden ausschließlich in TIA geprüft; keine Platzhalterzeilen im Simulator");
             check(window.Host.Read(s => s.Paused && s.Mode == OperationMode.ExternalPlc), "Während des digitalen Laufs bleibt ausschließlich die virtuelle SPS Steuerungsquelle");
             check(!window.LiveInsertWorkpiece.IsEnabled && !window.LiveRemoveWorkpiece.IsEnabled, "Bewegtes Band sperrt beide Prüflingsaktionen");
+            check(!window.LiveZeroBandMarking.IsEnabled, "Bewegtes Band sperrt Nullsetzen der Bandmarkierung");
             check(!window.ProfileSelect.IsEnabled, "Profiländerungen während Livebetrieb gesperrt");
             bool profileRefused = false;
             try { window.ApplyStudyProfile(selected); } catch (ArgumentException) { profileRefused = true; }
@@ -207,6 +208,12 @@ internal static class Fixture {
                 "Signalverlauf erhält sämtliche Streamsamples zwischen Render-Ticks");
             var workpieceRun = window.LiveProcess.RunAsync(Request("workpiece")); await WaitSample(window.LiveProcess); window.Refresh();
             check(window.LiveRemoveWorkpiece.IsEnabled && !window.LiveInsertWorkpiece.IsEnabled, "Frisch bestätigter Stillstand erlaubt Entnahme am rechten Bandende");
+            check(window.LiveZeroBandMarking.IsEnabled, "Frisch bestätigter Stillstand erlaubt Nullsetzen der Bandmarkierung");
+            var beforeZero = window.LiveProcess.Snapshot.Latest!;
+            window.LiveZeroBandMarking.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            check(FindPlant(window)!.Marking.PositionMm(beforeZero.BeltMm) == 0 && window.LiveProcess.Snapshot.Latest!.BeltMm == 275 &&
+                window.LiveProcess.Snapshot.Latest!.Sequence == beforeZero.Sequence && window.LiveProcess.Snapshot.Latest!.GeneratedRisingEdges == beforeZero.GeneratedRisingEdges,
+                "Nullsetzen über den echten UI-Button verändert nur die Markierung; kein Prozessbefehl, Bandweg oder Hall-Reset");
             var remove = window.ChangeLiveWorkpieceAsync(false);
             check(!window.LiveRemoveWorkpiece.IsEnabled && !window.LiveInsertWorkpiece.IsEnabled && window.LiveProcess.Snapshot.Latest!.Present,
                 "Offener Befehl sperrt Doppelklick und entfernt das Objekt nicht vorzeitig");
@@ -218,6 +225,7 @@ internal static class Fixture {
                 FindPlant(window)!.Snapshot!.Plant.Left.Detected && window.LiveRemoveWorkpiece.IsEnabled,
                 "Bestätigtes Wiedereinsetzen links aktualisiert Anlage und linken Sensor");
             await window.LiveProcess.StopAsync(); await workpieceRun; window.Refresh();
+            check(!window.LiveZeroBandMarking.IsEnabled, "Historischer Stillstand entsperrt das Nullsetzen nicht");
             check(window.LiveRemoveWorkpiece.IsEnabled, "Nach kontrolliertem Stillstand bleibt Entnahme für den nächsten Lauf bedienbar");
             await window.ChangeLiveWorkpieceAsync(false); window.UpdateLayout();
             check(!FindPlant(window)!.Configuration.InitialPresent && FindPlant(window)!.Snapshot == null &&

@@ -211,5 +211,12 @@
     "InstanceName": null,
     "SchemaVersion": 1
   },
-  "DigitalSpeedMmPerSecond": 100
+  "DigitalSpeedMmPerSecond": 100,
+  "Analog": {
+    "InputMinimumVolts": -10,
+    "InputMaximumVolts": 10,
+    "OutputMinimumVolts": 0,
+    "OutputMaximumVolts": 10,
+    "InitialPotentiometerVolts": 0
+  }
 }

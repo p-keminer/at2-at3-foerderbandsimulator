@@ -14,8 +14,9 @@ namespace Plant.Adapter
         private ActuatorFrame adopted = new(Valid: false);
         private long generatedEdges;
         private readonly WorkpieceCommandChannel? workpieceCommands;
-        public ExternalPlantSimulation(PlantConfiguration configuration, WorkpieceCommandChannel? workpieceCommands = null)
-        { this.configuration = configuration.Copy(); this.workpieceCommands = workpieceCommands; model = new(this.configuration); model.Edge += _ => generatedEdges++; }
+        private readonly PotentiometerControl? potentiometer;
+        public ExternalPlantSimulation(PlantConfiguration configuration, WorkpieceCommandChannel? workpieceCommands = null, PotentiometerControl? potentiometer = null)
+        { this.configuration = configuration.Copy(); this.workpieceCommands = workpieceCommands; this.potentiometer = potentiometer; model = new(this.configuration); if (potentiometer != null) model.PotiRaw = potentiometer.RequestedRaw; model.Edge += _ => generatedEdges++; }
         public long TimeNs { get { lock (gate) return model.TimeNs; } }
         public PlantSnapshot Snapshot { get { lock (gate) return model.Snapshot(adopted with { Valid = adopted.Valid && valid }); } }
         public void AdvanceTo(long targetNs, ActuatorFrame heldCommand, CancellationToken cancellation)
@@ -44,7 +45,11 @@ namespace Plant.Adapter
         { lock (gate) return model.Sensors with { Sequence = sequence, Valid = valid }; }
         public void Invalidate() => valid = false;
         public void AdoptOutputs(ActuatorFrame command) { lock (gate) adopted = command; }
-        public void ApplyPendingCommands(long sequence) => workpieceCommands?.ApplyAtInputBoundary(this, sequence);
+        public void ApplyPendingCommands(long sequence)
+        {
+            workpieceCommands?.ApplyAtInputBoundary(this, sequence);
+            if (potentiometer != null) lock (gate) model.PotiRaw = potentiometer.RequestedRaw;
+        }
         public WorkpieceCommandResult ChangeWorkpiece(WorkpieceCommand command, long sequence)
         {
             lock (gate)

@@ -56,7 +56,7 @@ internal static class InteractiveFixture {
           Applied=true, Detail="Siemens-free fixture: command accepted." };
         pending=null; changes++;
       }
-      Console.WriteLine("SAMPLE "+json.Serialize(new { SchemaVersion=2, WorkpieceCommandsSupported=true,
+      Console.WriteLine("SAMPLE "+json.Serialize(new { SchemaVersion=3, WorkpieceCommandsSupported=true,
         WorkpieceChange=change, Sequence=n, TimeNs=(n-1)*1000000L, Position=40, Length=120,
         Present=present, Left=present, LeftIdeal=present, LeftDetected=present,
         LampRed=false, LampYellow=false, LampGreen=!present }));

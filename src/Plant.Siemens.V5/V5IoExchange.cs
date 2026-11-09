@@ -76,8 +76,9 @@ namespace Plant.Siemens.V5
                 WriteInputBit("OpticalHigh", frame.OpticalHigh);
                 WriteInputBit("SensorRightHigh", frame.SensorRightHigh);
                 WriteInputBit("HallHigh", frame.HallHigh);
-                if (digital == null && Bound("PotiRaw"))
+                if ((digital == null || digital.UsesAnalog) && Bound("PotiRaw"))
                 {
+                    Numbers.Require(frame.PotiRaw >= -Analog.Nominal && frame.PotiRaw <= Analog.Nominal, "AI-Potentiometerrohwert außerhalb des Nennbereichs.");
                     var s = Binding("PotiRaw");
                     uint written = instance.InputArea.WriteBytes((uint)s.ByteOffset!.Value, S7Bytes.Int16(frame.PotiRaw));
                     if (written != 2) { Quality = LinkQuality.Faulted; grantAvailable = false; throw new InvalidOperationException("Potentiometer nicht vollständig geschrieben."); }
@@ -91,7 +92,7 @@ namespace Plant.Siemens.V5
             RequireGrant();
             try
             {
-                if (digital != null)
+                if (digital != null && !digital.UsesAnalog)
                 {
                     // Nominal is solely the model's internal scaling. It is NOT a PLC analogue read.
                     return new(ReadOutputBit("MotorRight"), ReadOutputBit("MotorLeft"), Analog.Nominal,

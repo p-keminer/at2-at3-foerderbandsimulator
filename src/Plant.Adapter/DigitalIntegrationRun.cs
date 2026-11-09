@@ -64,7 +64,7 @@ namespace Plant.Adapter
         public static async Task<DigitalRunResult> ExecuteAsync(IPlcEndpointFactory factory, SignalMap map,
             DigitalCycleProfile profile, PlantConfiguration configuration, DigitalRunLimits limits,
             LiveAuthorization authorization, CancellationToken cancellation = default, Action<DigitalSample>? progress = null,
-            WorkpieceCommandChannel? workpieceCommands = null, Func<string?>? controlFailure = null)
+            WorkpieceCommandChannel? workpieceCommands = null, Func<string?>? controlFailure = null, PotentiometerControl? potentiometer = null)
         {
             authorization.RequireApproved(); profile.RequireMap(map); limits.Validate();
             // Snapshot mutable caller configuration before any asynchronous work.
@@ -73,7 +73,9 @@ namespace Plant.Adapter
             Numbers.Require(!limits.InteractiveSession || (!configuration.InitialPresent && workpieceCommands != null),
                 "Interaktive Verbindung startet ohne Prüfling und benötigt einen Bedienkanal.");
             var result = new DigitalRunResult { InteractiveSession = limits.InteractiveSession };
-            var plant = new ExternalPlantSimulation(configuration, workpieceCommands);
+            Numbers.Require(profile.UsesAnalog || potentiometer == null, "Potentiometer ohne Analogprofil.");
+            potentiometer ??= profile.Analog == null ? null : new PotentiometerControl(profile.Analog);
+            var plant = new ExternalPlantSimulation(configuration, workpieceCommands, potentiometer);
             var options = new CouplingOptions { DigitalCycle = profile, ConfirmedInputPartitions = new[] { 0u }, InputAdoptionReviewed = true };
             var controller = new PlcCouplingController(factory, plant, options);
             using var deadline = new CancellationTokenSource();

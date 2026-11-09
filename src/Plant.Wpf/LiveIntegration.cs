@@ -23,6 +23,7 @@ namespace Plant.Wpf
         internal CheckBox RuntimeConsent = null!, CpuConsent = null!, TiaConsent = null!;
         internal Button LiveConnect = null!, LiveDisconnect = null!;
         internal Button LiveInsertWorkpiece = null!, LiveRemoveWorkpiece = null!;
+        internal Button LiveZeroBandMarking = null!;
         private TextBlock liveWorkpieceStatus = null!;
         private bool? liveDraftPresent;
         private bool livePreviewEdited, workpieceEditing;
@@ -35,6 +36,11 @@ namespace Plant.Wpf
         private TextBox liveSteps = null!, liveVirtualSeconds = null!, liveWallSeconds = null!;
         private PlantConfiguration? liveConfiguration;
         private DigitalCycleProfile? liveProfile;
+        internal Slider LivePotentiometer = null!;
+        private StackPanel livePotentiometerPanel = null!;
+        private TextBlock potentiometerReadback = null!;
+        private bool potentiometerSending;
+        private double requestedPotentiometer;
         private SignalMap? liveMap;
         private SessionSnapshot? lastLiveView;
         private string lastLiveDetail = "";
@@ -50,8 +56,29 @@ namespace Plant.Wpf
         {
             var layout = new StackPanel();
             var workpiecePanel = Ui.Section(layout, "Prüfling · nur bei Stillstand");
+            livePotentiometerPanel = Ui.Section(layout, "Potentiometer – SPS-Board, Channel 5");
+            LivePotentiometer = new Slider { Minimum = 0, Maximum = 10, SmallChange = 0.1, LargeChange = 1, TickFrequency = 1, Margin = new Thickness(4, 10, 4, 10) };
+            System.Windows.Automation.AutomationProperties.SetName(LivePotentiometer, "Potentiometer – SPS-Board, Channel 5");
+            livePotentiometerPanel.Children.Add(LivePotentiometer);
+            potentiometerReadback = Ui.Text("0,00 V · Rohwert 0", 12); livePotentiometerPanel.Children.Add(potentiometerReadback);
+            livePotentiometerPanel.Children.Add(Ui.Text("Motoransteuerungsmodul: eigenes Potentiometer fest auf 0 Ω · linker Anschlag", 12));
+            LivePotentiometer.ValueChanged += async (_, _) =>
+            {
+                requestedPotentiometer = LivePotentiometer.Value;
+                if (potentiometerSending || !liveHost.Snapshot.IsActive) return;
+                potentiometerSending = true;
+                try
+                {
+                    double sent;
+                    do { sent = requestedPotentiometer; await liveHost.SetPotentiometerAsync(sent); }
+                    while (sent != requestedPotentiometer && liveHost.Snapshot.IsActive);
+                }
+                catch (Exception e) when (e is ArgumentException || e is InvalidOperationException || e is IOException || e is TimeoutException)
+                { SetStatus("Potentiometer nicht übertragen: " + e.Message, true); }
+                finally { potentiometerSending = false; }
+            };
             liveSettings = Ui.Section(layout, "SPS-Verbindung");
-            liveSettings.Children.Add(Ui.Text("Digital · lokaler PLCSIM-Softbus", 12));
+            liveSettings.Children.Add(Ui.Text("Lokale virtuelle SPS · PLCSIM-Softbus", 12));
             var testModes = Ui.Fold(liveSettings, "Erweiterte Testarten");
             liveRunKind = Ui.Select(testModes, "Betriebsart", "Stationärer E/A-Test", "Förderband-Abnahmetest", "Interaktive Verbindung");
             liveRunHint = Ui.Text(LiveStatusText.Hint(false), 12); testModes.Children.Add(liveRunHint);
@@ -102,6 +129,9 @@ namespace Plant.Wpf
             LiveRemoveWorkpiece = Ui.Button("Prüfling entfernen", async () => await ChangeLiveWorkpieceAsync(false));
             workpieceRow.Children.Add(LiveInsertWorkpiece); workpieceRow.Children.Add(LiveRemoveWorkpiece);
             liveWorkpieceStatus = Ui.Text("", 12); workpiecePanel.Children.Add(liveWorkpieceStatus);
+            LiveZeroBandMarking = Ui.Button("Bandmarkierung auf 0", ZeroBandMarking);
+            LiveZeroBandMarking.ToolTip = "Nur bei frisch bestätigtem Stillstand und ausgeschalteten Motorbefehlen. Setzt die sichtbare Markierung auf 0 mm; Bandweg und SPS-Zähler bleiben unverändert.";
+            workpiecePanel.Children.Add(LiveZeroBandMarking);
             layout.Children.Add(BuildDefaultRecoveryPanel());
 
             liveRunKind.SelectedIndex = 2;
@@ -134,6 +164,7 @@ namespace Plant.Wpf
                 Numbers.Require(RuntimeConsent.IsChecked == true && CpuConsent.IsChecked == true && TiaConsent.IsChecked == true, "Alle drei Freigaben müssen bewusst gesetzt werden.");
                 string root = FindProjectDirectory(), probe = FindProbe(root);
                 var profile = selectedProfile.DigitalSettings(); profile.TestSpeedMmPerSecond = Ui.Value(liveSpeed);
+                if (profile.Analog != null) profile.Analog.InitialPotentiometerVolts = LivePotentiometer.Value;
                 var map = Json.Read<SignalMap>(Json.Write(selectedProfile.Map)); profile.RequireMap(map);
                 var config = selectedProfile.Plant.Copy();
                 config.ProfileId = "WPF DIGITALER TEST · Beispielgeometrie, Testfaktor, keine Laborkalibrierung";
@@ -152,9 +183,9 @@ namespace Plant.Wpf
                 Json.SaveAtomic(mapPath, Json.Write(map)); Json.SaveAtomic(profilePath, Json.Write(profile)); Json.SaveAtomic(plantPath, Json.Write(config));
                 Host.Change(s => { s.Pause(); s.SetMode(OperationMode.ExternalPlc); });
                 liveConfiguration = config; liveConfigurationHash = config.Hash(); liveProfile = profile; liveMap = map;
-                liveSamples.Clear(); liveEvents.Clear(); lastLiveDetail = ""; lastLiveView = null;
+                liveSamples.Clear(); liveEvents.Clear(); lastLiveDetail = ""; lastLiveView = null; plantView.Marking.Reset();
                 livePreviewEdited = false; liveDraftPresent = null;
-                SetStatus(InteractiveConnection ? "Verbinde leere Anlage. Motorbefehle kommen ausschließlich aus der SPS." : "Begrenzter digitaler Test startet.");
+                SetStatus(InteractiveConnection ? "Verbinde leere Anlage. Motorbefehle kommen ausschließlich aus der SPS." : "Begrenzter SPS-Test startet.");
                 var running = liveHost.RunAsync(new LiveProcessRequest { ProbePath = probe, WorkingDirectory = root,
                     MapPath = mapPath, ProfilePath = profilePath, PlantPath = plantPath, ReportPath = reportPath,
                     Limits = limits, RuntimeApproved = true, CpuStepsApproved = true, TiaConfirmed = true });
@@ -201,11 +232,20 @@ namespace Plant.Wpf
             liveStopButton.IsEnabled = LiveDisconnect.IsEnabled;
             RefreshDefaultRecoveryControls();
             RefreshWorkpieceControls(state);
+            LiveZeroBandMarking.IsEnabled = !RecoveryBusy && !workpieceEditing && liveHost.TryGetStoppedBeltDistance(out _);
             adapterStatus.Text = $"Status: {StateLabel(state.State)}\n{state.Detail}" +
                 (state.ReportPath.Length == 0 ? "" : $"\nBericht: {state.ReportPath}\nCleanup: {(state.CleanupConfirmed ? "bestätigt" : "noch nicht bestätigt")} · CPU vor Trennen: {state.CpuBeforeDisconnect}") +
                 (!state.IsActive && state.ReportPath.Length > 0 ? state.InteractiveSession ? "\n" + LiveStatusText.Outcome(state)
                     : $"\nLaufprüfung: {(state.Passed ? "BESTANDEN" : "nicht bestanden / abgebrochen")} · vollständiger Transport: {(state.TransportCompleted ? "im Bericht bestätigt" : "nicht bestätigt")}" : "");
         }
+        private void ZeroBandMarking() => Safe(() =>
+        {
+            Numbers.Require(!RecoveryBusy && !workpieceEditing && liveHost.TryGetStoppedBeltDistance(out _),
+                "Bandmarkierung nur bei frisch bestätigtem Stillstand und ausgeschalteten Motorbefehlen auf 0 setzen.");
+            Numbers.Require(liveHost.TryGetStoppedBeltDistance(out double distance), "Stillstand nicht mehr bestätigt.");
+            plantView.Marking.SetZero(distance); plantView.InvalidateVisual();
+            SetStatus("Bandmarkierung auf 0 mm gesetzt. SPS-Impulszähler für die nächste Kalibrierfahrt in TIA zurücksetzen.");
+        });
         private static string StateLabel(LiveProcessState state) => state switch
         {
             LiveProcessState.Connecting => "Verbindungsaufbau", LiveProcessState.Streaming => "Verbunden · SPS steuert die Anlage",
@@ -276,7 +316,7 @@ namespace Plant.Wpf
             {
                 long us = sample.TimeNs / 1000;
                 liveSamples.Add(new InputSample(us, sample.Sequence, OperationMode.ExternalPlc,
-                    new SensorFrame(sample.Left, sample.Optical, sample.Right, sample.Hall, 0, true, sample.Sequence, us),
+                    new SensorFrame(sample.Left, sample.Optical, sample.Right, sample.Hall, sample.AnalogMode ? sample.PotiRaw : (short)0, true, sample.Sequence, us),
                     sample.ToActuatorFrame(true), UnavailablePlcTelemetry));
             }
             if (liveSamples.Count > 0)
@@ -315,6 +355,14 @@ namespace Plant.Wpf
             plantView.Configuration = config;
             plantView.Snapshot = lastLiveView; plantView.InvalidateVisual();
             if (!details) return;
+            bool analog = (liveProfile?.Analog ?? selectedProfile.Analog) != null;
+            LivePotentiometer.IsEnabled = analog && (!connection.IsActive || valid);
+            if (analog)
+            {
+                var settings = liveProfile?.Analog ?? selectedProfile.Analog!;
+                potentiometerReadback.Text = $"Eingestellt: {LivePotentiometer.Value:F2} V · AI-Sollrohwert {settings.InputRaw(LivePotentiometer.Value)}\n" +
+                    (valid && latest?.AnalogMode == true ? $"AI zuletzt übertragen: {latest.PotiRaw}\nAQ aus SPS: {latest.SpeedCommandRaw} · {Analog.OutputVoltage(latest.SpeedCommandRaw):F2} V\nBand: {latest.ObjectVelocity:F2} mm/s · {(latest.MotorRight ? "rechts" : latest.MotorLeft ? "links" : "aus")}" : "Analoge SPS-Werte: nicht verfügbar / nicht verbunden");
+            }
             if (Tabs.SelectedIndex == 0) { trace.Samples = liveSamples.ToArray(); trace.InvalidateVisual(); }
             Title = "AT-2 / AT-3 · SPS " + (liveMap?.InstanceName ?? selectedProfile.Map.InstanceName) + " · " + StateLabel(connection.State);
             profileSubtitle.Text = "Lokale virtuelle Siemens-SPS · PLCSIM Advanced · " + (valid ? "verbunden" : "getrennt");
@@ -324,7 +372,7 @@ namespace Plant.Wpf
                 $"Lampen: Rot {Bit(latest.LampRed)} · Gelb {Bit(latest.LampYellow)} · Grün {Bit(latest.LampGreen)}\n" +
                 $"Modell: Motor {latest.MotorVelocity:F2} mm/s · Prüfling {latest.ObjectVelocity:F2} mm/s · linke Kante {latest.Position:F2} mm" +
                 (valid ? "" : connection.State == LiveProcessState.Finalizing ? "\nAustausch beendet: Abschlussbericht wird geschrieben. Angezeigte Werte sind historisch und kein Erfolgsnachweis." : "\nVerbindung nicht aktiv: angezeigte Werte sind historisch, das Modell schreitet nicht fort.");
-            diagnostic.Text = $"Temporäre C#-Testgeschwindigkeit: {(liveProfile?.TestSpeedMmPerSecond ?? 100):F2} mm/s · keine analoge SPS-Vorgabe\n" +
+            diagnostic.Text = (analog ? "Drehzahl aus analogem SPS-Ausgang · keine feste Testgeschwindigkeit\n" : $"Temporäre C#-Testgeschwindigkeit: {(liveProfile?.TestSpeedMmPerSecond ?? 100):F2} mm/s · keine analoge SPS-Vorgabe\n") +
                 $"Hallteilung im Modell: {config.HallPitchMm:F3} mm/Impuls · Testannahme\n" +
                 (latest == null ? "Keine Liveimpulse empfangen." : $"Erzeugte steigende Modellflanken: {latest.GeneratedRisingEdges}\n" +
                     $"Erkannt / elektrischer Pegel: links {Bit(latest.LeftDetected)}/{Bit(latest.Left)} · Optik {Bit(latest.OpticalDetected)}/{Bit(latest.Optical)} · rechts {Bit(latest.RightDetected)}/{Bit(latest.Right)}\n") +
@@ -344,8 +392,8 @@ namespace Plant.Wpf
         {
             var config = liveConfiguration ?? activeConfig;
             long us = sample.TimeNs / 1000;
-            var sensors = new SensorFrame(sample.Left, sample.Optical, sample.Right, sample.Hall, 0, valid, sample.Sequence, us);
-            // SpeedCommandRaw/PotiRaw remain unbound. Lamps come directly from PLC outputs.
+            var sensors = new SensorFrame(sample.Left, sample.Optical, sample.Right, sample.Hall, sample.AnalogMode ? sample.PotiRaw : (short)0, valid, sample.Sequence, us);
+            // Analogue words are available only in an explicitly configured analogue profile.
             var actuators = sample.ToActuatorFrame(valid);
             var plant = new PlantSnapshot(us, sample.Sequence, sample.MotorMm, sample.BeltMm, sample.MotorVelocity, sample.ObjectVelocity,
                 sample.Present, sample.Position, sample.Length, new(sample.LeftIdeal, sample.LeftDetected, sample.Left),
@@ -365,13 +413,15 @@ namespace Plant.Wpf
             };
             return SignalContract.All.Where(d => d.Direction != "plc_to_diagnostics").Select(d =>
             {
-                bool bound = DigitalCycleProfile.SignalIds.Contains(d.Id);
+                bool bound = (liveProfile ?? selectedProfile.DigitalSettings()).RequiredSignalIds.Contains(d.Id);
                 string value = values.TryGetValue(d.Id, out bool bit) ? (bit ? "HIGH / 1" : "LOW / 0") : "—";
+                if (sample?.AnalogMode == true && d.Id == "PotiRaw") value = sample.PotiRaw.ToString(CultureInfo.CurrentCulture);
+                if (sample?.AnalogMode == true && d.Id == "SpeedCommandRaw") value = sample.SpeedCommandRaw.ToString(CultureInfo.CurrentCulture);
                 var binding = liveMap?.Signals.SingleOrDefault(s => s.Id == d.Id && s.Confirmed && s.ByteOffset.HasValue);
-                string address = binding == null ? "keine bestätigte Bindung geladen" : (binding.Area == "Input" ? "I" : "Q") + binding.ByteOffset + "." + binding.BitOffset;
+                string address = binding == null ? "keine bestätigte Bindung geladen" : SignalAddress.Format(binding);
                 return new SignalRow(d.Id, d.Direction == "plant_to_plc" ? "C#-Anlage → SPS" : d.Direction == "plc_to_plant" ? "SPS → C#-Anlage" : "SPS → Diagnose",
                     bound ? d.Direction == "plant_to_plc" ? "Anlagenmodell im LiveProbe" : "SPS " + (liveMap?.InstanceName ?? selectedProfile.Map.InstanceName) : "nicht angebunden", value,
-                    !bound ? "Unavailable" : sample == null ? "nicht verbunden" : valid ? "gültig / digital live" : "veraltet / ungültig",
+                    !bound ? "Unavailable" : sample == null ? "nicht verbunden" : valid ? "gültig / " + (sample.AnalogMode && (d.Id == "PotiRaw" || d.Id == "SpeedCommandRaw") ? "analog live" : "digital live") : "veraltet / ungültig",
                     !bound ? "ungebunden" : $"{sample?.TimeNs ?? 0} ns · {address}");
             }).ToArray();
         }

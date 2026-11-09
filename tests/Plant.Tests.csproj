@@ -8,4 +8,5 @@
   <ItemGroup><Compile Include="../src/Plant.Wpf/LiveSessionPolicy.cs" Link="LiveSessionPolicy.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../src/Plant.Wpf/DefaultRecoveryReport.cs" Link="DefaultRecoveryReport.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../src/Plant.Wpf/CpuStatusIndicator.cs" Link="CpuStatusIndicator.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../src/Plant.Wpf/BeltMarking.cs" Link="BeltMarking.cs" /></ItemGroup>
 </Project>

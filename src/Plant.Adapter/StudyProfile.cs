@@ -18,6 +18,7 @@ namespace Plant.Adapter
         public PlantConfiguration Plant { get; set; } = new();
         public SignalMap Map { get; set; } = SignalMap.Unbound();
         public double DigitalSpeedMmPerSecond { get; set; } = 100;
+        public AnalogIoSettings? Analog { get; set; }
         public StudyProfile Copy() => Json.Read<StudyProfile>(Json.Write(this));
         public override string ToString() => Name;
         public void Validate()
@@ -27,13 +28,14 @@ namespace Plant.Adapter
             Numbers.Require(!string.IsNullOrWhiteSpace(Name) && Name.Length <= 80, "Profilname: 1 bis 80 Zeichen.");
             Numbers.Require(Plant != null && Map != null, "Anlage oder Signalzuordnung fehlt.");
             Plant!.Validate();
+            Analog?.Validate();
             var errors = Map!.Validate(false);
             Numbers.Require(errors.Count == 0, string.Join("\n", errors));
             Numbers.Require(Map.InstanceName == null || (Map.InstanceName.Length <= 128 && !Map.InstanceName.Any(char.IsControl)), "Ungültiger CPU-Instanzname.");
             Numbers.Require(Numbers.Finite(DigitalSpeedMmPerSecond) && DigitalSpeedMmPerSecond > 0 && DigitalSpeedMmPerSecond <= 100, "Digitale Modellgeschwindigkeit: > 0 bis 100 mm/s.");
         }
         public DigitalCycleProfile DigitalSettings() => new() { TestSpeedMmPerSecond = DigitalSpeedMmPerSecond,
-            Ob1AutomaticImageConfirmed = true, ConfigurableMapping = true, ExpectedInstanceName = Map.InstanceName };
+            Ob1AutomaticImageConfirmed = true, ConfigurableMapping = true, ExpectedInstanceName = Map.InstanceName, Analog = Analog?.Copy() };
         public string[] ConnectionProblems()
         {
             try { Validate(); DigitalSettings().RequireMap(Map); return Array.Empty<string>(); }

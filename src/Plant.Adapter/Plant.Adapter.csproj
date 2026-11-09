@@ -1,3 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><Reference Include="System.Web.Extensions" /></ItemGroup>
   <ItemGroup><ProjectReference Include="../Plant.Core/Plant.Core.csproj" /></ItemGroup>
 </Project>

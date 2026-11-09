@@ -5,9 +5,12 @@ namespace Plant.Adapter
     // Small, versioned process boundary for WPF. No Siemens object/SDK load in the UI.
     public sealed class DigitalProgress
     {
-        public const int CurrentSchemaVersion = 2; // Includes all three PLC lamp outputs.
+        public const int CurrentSchemaVersion = 3; // Explicit analogue provenance and actual published/read words.
         public int SchemaVersion { get; set; } = CurrentSchemaVersion;
         public bool WorkpieceCommandsSupported { get; set; }
+        public bool AnalogMode { get; set; }
+        public short PotiRaw { get; set; }
+        public int SpeedCommandRaw { get; set; }
         public WorkpieceCommandResult? WorkpieceChange { get; set; }
         public long TimeNs { get; set; }
         public long Sequence { get; set; }
@@ -34,11 +37,13 @@ namespace Plant.Adapter
         public bool LampYellow { get; set; }
         public bool LampRed { get; set; }
         public long GeneratedRisingEdges { get; set; }
-        // No analogue PLC command is available in this profile.
-        public ActuatorFrame ToActuatorFrame(bool valid) => new(MotorRight, MotorLeft, 0,
+        // Digital profiles deliberately expose no analogue PLC command.
+        public ActuatorFrame ToActuatorFrame(bool valid) => new(MotorRight, MotorLeft, AnalogMode ? SpeedCommandRaw : 0,
             LampRed, LampYellow, LampGreen, valid, Sequence, TimeNs / 1000);
-        public static DigitalProgress From(DigitalSample sample) => new()
+        public static DigitalProgress From(DigitalSample sample, bool analogMode = false) => new()
         {
+            AnalogMode = analogMode, PotiRaw = analogMode ? sample.Published.PotiRaw : (short)0,
+            SpeedCommandRaw = analogMode ? sample.Coupling.Applied.SpeedCommandRaw : 0,
             WorkpieceCommandsSupported = true, WorkpieceChange = sample.WorkpieceChange?.Copy(),
             TimeNs = sample.Coupling.VirtualTimeNs, Sequence = sample.Coupling.Sequence,
             Position = sample.Plant.LeftEdgeMm, Length = sample.Plant.TrueLengthMm, MotorMm = sample.Plant.MotorMm, BeltMm = sample.Plant.BeltMm,

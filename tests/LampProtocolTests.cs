@@ -29,7 +29,7 @@ internal static class SiemensFreeLampFixture {
     Console.WriteLine("SIEMENS_FREE_LAMP_PROTOCOL_FIXTURE");
     var json=new JavaScriptSerializer();
     for(int mask=0;mask<8;mask++) {
-      Console.WriteLine("SAMPLE "+json.Serialize(new { SchemaVersion=legacy?1:2,
+      Console.WriteLine("SAMPLE "+json.Serialize(new { SchemaVersion=legacy?1:3,
         Sequence=mask+1, TimeNs=mask*1000000L, Position=50, Length=120, Present=true,
         LampRed=(mask&1)!=0, LampYellow=(mask&2)!=0, LampGreen=(mask&4)!=0 }));
     }

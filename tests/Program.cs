@@ -326,6 +326,9 @@ internal static partial class Program
             calibrationEvidence = measurements;
         });
         RunStudyProfileTests();
+        RunAnalogTests();
+        RunAnalogHostTests();
+        RunBeltMarkingTests();
         RunCouplingTests();
         RunMinimalProbeTests();
         RunDigitalIntegrationTests();

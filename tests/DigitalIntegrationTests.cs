@@ -162,7 +162,7 @@ internal static partial class Program
                 var wire = DigitalProgress.From(sample);
                 var copy = Json.Read<DigitalProgress>(Json.Write(wire));
                 var view = copy.ToActuatorFrame(true);
-                Assert(copy.SchemaVersion == 2 && copy.TimeNs == sample.Coupling.VirtualTimeNs && copy.Position == sample.Plant.LeftEdgeMm,
+                Assert(copy.SchemaVersion == DigitalProgress.CurrentSchemaVersion && copy.TimeNs == sample.Coupling.VirtualTimeNs && copy.Position == sample.Plant.LeftEdgeMm,
                     "Prozessdaten verändert");
                 Assert(view.LampRed == sample.Coupling.Applied.LampRed && view.LampYellow == sample.Coupling.Applied.LampYellow &&
                     view.LampGreen == sample.Coupling.Applied.LampGreen && view.Sequence == sample.Coupling.Sequence,

@@ -63,7 +63,8 @@ internal static class Program
             RequireStationary = !command.Has("--allow-movement"), RequireCompletedTransport = command.Has("--require-transport"), InteractiveSession = command.Has("--interactive") };
         limits.Validate();
         var workpieceCommands = command.Has("--stream") ? new WorkpieceCommandChannel() : null;
-        using var control = new InteractiveControlSession(workpieceCommands, limits.InteractiveSession);
+        var potentiometer = profile.Analog == null ? null : new PotentiometerControl(profile.Analog);
+        using var control = new InteractiveControlSession(workpieceCommands, limits.InteractiveSession, potentiometer: potentiometer);
         ConsoleCancelEventHandler onCancel = (_, e) => { e.Cancel = true; control.RequestStop(); };
         Console.CancelKeyPress += onCancel;
         // Only the owned WPF stream can submit bounded plant commands. EOF/STOP still cancels.
@@ -87,15 +88,15 @@ internal static class Program
         {
             var result = await DigitalIntegrationRun.ExecuteAsync(new Plant.Siemens.V5.V5EndpointFactory(profile), map, profile,
                 configuration, limits, new(true, true), control.Token,
-                command.Has("--stream") ? sample => { Console.WriteLine("SAMPLE " + Json.Write(DigitalProgress.From(sample))); Console.Out.Flush(); } : null,
-                workpieceCommands, () => control.Failure);
+                command.Has("--stream") ? sample => { Console.WriteLine("SAMPLE " + Json.Write(DigitalProgress.From(sample, profile.UsesAnalog))); Console.Out.Flush(); } : null,
+                workpieceCommands, () => control.Failure, potentiometer);
             // The run has ended and cleanup has been attempted. A large report can take
             // longer than the stream freshness deadline; the process deadline still applies.
             if (command.Has("--stream")) { Console.WriteLine("FINALIZING"); Console.Out.Flush(); }
             var version = FileVersionInfo.GetVersionInfo(sdk);
             Json.SaveAtomic(report, Json.WriteReport(new { sdkProductVersion = version.ProductVersion, sdkFileVersion = version.FileVersion,
                 map, profile, configuration, limits, result }));
-            Console.WriteLine($"Digitaltest: {(result.Passed ? "PASS" : "FAIL")}; Punkte={result.Samples.Count}; Fortschaltungen={result.ContinueCalls}; Transport={result.TransportCompleted}; SPS-MesswertGeprüft={result.PlcMeasurementVerified}; Cleanup={result.CleanupConfirmed}; Bericht={report}");
+            Console.WriteLine($"SPS-Test: {(result.Passed ? "PASS" : "FAIL")}; Punkte={result.Samples.Count}; Fortschaltungen={result.ContinueCalls}; Transport={result.TransportCompleted}; SPS-MesswertGeprüft={result.PlcMeasurementVerified}; Cleanup={result.CleanupConfirmed}; Bericht={report}");
             return result.Passed ? 0 : 1;
         }
         finally { Console.CancelKeyPress -= onCancel; }

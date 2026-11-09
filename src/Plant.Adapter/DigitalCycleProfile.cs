@@ -4,7 +4,7 @@ using Plant.Core;
 
 namespace Plant.Adapter
 {
-    // Nine confirmed digital bits. The full analogue/telemetry contract remains unchanged.
+    // Proven C-cycle exchange: nine digital bits, optionally extended by two analogue words.
     public sealed class DigitalCycleProfile
     {
         public int SchemaVersion { get; set; } = 1;
@@ -12,16 +12,22 @@ namespace Plant.Adapter
         public bool Ob1AutomaticImageConfirmed { get; set; }
         public bool ConfigurableMapping { get; set; }
         public string? ExpectedInstanceName { get; set; }
+        // Non-null extends the proven C-cycle exchange; null retains the nine-bit test profile.
+        public AnalogIoSettings? Analog { get; set; }
+        [System.Web.Script.Serialization.ScriptIgnore] public bool UsesAnalog => Analog != null;
+        [System.Web.Script.Serialization.ScriptIgnore] public System.Collections.Generic.IReadOnlyList<string> RequiredSignalIds => UsesAnalog ? AnalogSignalIds : SignalIds;
+        public static System.Collections.Generic.IReadOnlyList<string> AnalogSignalIds { get; } = Array.AsReadOnly(new[] { "SensorLeftHigh", "OpticalHigh", "SensorRightHigh", "HallHigh", "LampGreen", "MotorRight", "MotorLeft", "LampYellow", "LampRed", "PotiRaw", "SpeedCommandRaw" });
         public const string ProfileId = "AT2_Kopplung_9_digital_bits_SingleStep_C";
         public static System.Collections.Generic.IReadOnlyList<string> SignalIds { get; } = Array.AsReadOnly(new[] { "SensorLeftHigh", "OpticalHigh", "SensorRightHigh", "HallHigh", "LampGreen", "MotorRight", "MotorLeft", "LampYellow", "LampRed" });
         public void Validate()
         {
+            Analog?.Validate();
             Numbers.Require(SchemaVersion == 1 && Ob1AutomaticImageConfirmed, "Digitales C-Profil: Schema 1 und bestätigte OB1-E/A-Automatik erforderlich.");
             Numbers.Require(Numbers.Finite(TestSpeedMmPerSecond) && TestSpeedMmPerSecond > 0 && TestSpeedMmPerSecond <= 100,
                 "Temporäre C#-Testgeschwindigkeit muss >0 und höchstens 100 mm/s sein; keine analoge SPS-Vorgabe.");
         }
         public DigitalCycleProfile Copy() => new() { SchemaVersion = SchemaVersion, TestSpeedMmPerSecond = TestSpeedMmPerSecond, Ob1AutomaticImageConfirmed = Ob1AutomaticImageConfirmed,
-            ConfigurableMapping = ConfigurableMapping, ExpectedInstanceName = ExpectedInstanceName };
+            ConfigurableMapping = ConfigurableMapping, ExpectedInstanceName = ExpectedInstanceName, Analog = Analog?.Copy() };
         public void RequireMap(SignalMap map)
         {
             Validate();
@@ -38,12 +44,19 @@ namespace Plant.Adapter
                     (ConfigurableMapping || (b.ByteOffset == 0 && b.BitOffset == bit)),
                     "Unbestätigte oder abweichende digitale Adresse: " + id);
             }
-            Numbers.Require(map.Signals.All(s => !s.ByteOffset.HasValue || SignalIds.Contains(s.Id)),
-                "Digitalprofil enthält zusätzliche Bindung. Keine analogen, Marker- oder DB-Zugriffe in diesem Profil.");
+            if (UsesAnalog)
+                foreach (string id in new[] { "PotiRaw", "SpeedCommandRaw" })
+                {
+                    var b = map.Signals.SingleOrDefault(s => s.Id == id);
+                    Numbers.Require(b != null && b.Confirmed && b.ByteOffset.HasValue && b.AreaSizeBytes >= 2,
+                        "Analoges Pflichtsignal fehlt oder ist ungebunden: " + id);
+                }
+            Numbers.Require(map.Signals.All(s => !s.ByteOffset.HasValue || RequiredSignalIds.Contains(s.Id)),
+                "Profil enthält eine zusätzliche, für diese Betriebsart nicht freigegebene Bindung.");
         }
         public PlantConfiguration ConfigurePlant(PlantConfiguration source)
         {
-            Validate(); var copy = source.Copy(); copy.SpeedAt10V = TestSpeedMmPerSecond; copy.Validate(); return copy;
+            Validate(); var copy = source.Copy(); if (!UsesAnalog) copy.SpeedAt10V = TestSpeedMmPerSecond; copy.Validate(); return copy;
         }
     }
     public sealed record EndpointInspection(string InstanceName, string OperatingState, string OperatingMode, string[] Trace);

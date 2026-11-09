@@ -60,6 +60,12 @@ Anlagenvorschau. Sie erstellt und startet keine CPU.
 Messwerte und Zähler werden in der TIA-Beobachtungstabelle geprüft. Der Simulator zeigt zusätzlich
 die Anlage und verschiedene E/A-Signale.
 
+Das Profil **AT-2 Übung** unterstützt zusätzlich die analoge SPS-Kopplung:
+**Potentiometer – SPS-Board, Channel 5** liefert einen einstellbaren AI-Wert;
+die SPS gibt die Geschwindigkeit über ihren AQ-Ausgang vor. Beide Wortadressen
+werden unter **Profil einrichten** aus der eigenen TIA-Hardwarekonfiguration
+übernommen. [Analogbetrieb, MOVE und UNSCALE](ANLEITUNG.md#de-analog).
+
 <a name="de-tia-projekte"></a>
 
 ## TIA-Projekte
@@ -98,9 +104,17 @@ ohne Siemensinstallation möglich.
 
 Die digitale Kopplung wurde zuvor am eigenen Referenzstand erprobt.
 Zusätzlich bestand eine separate AT-3-Prüfvariante vier Liveprüfungen mit
-PLCSIM Advanced V5.0 Update 2 und dem C#-Anlagenkern. Profilwahl und geänderte
-Signaladressen sind weiterhin nicht live verifiziert. WinCC und die sichtbare
+PLCSIM Advanced V5.0 Update 2 und dem C#-Anlagenkern. Profilwahl und frei umbelegte
+digitale Signaladressen sind weiterhin nicht live verifiziert. WinCC und die sichtbare
 WPF-Darstellung wurden bei diesen zusätzlichen Prüfungen nicht getestet.
+
+Die analoge Erweiterung wurde am 08.11.2026 separat mit echten FUP-MOVE-/UNSCALE-
+Ausgängen geprüft: signierte AI-Werte, 0/50/100 mm/s per MOVE, etwa 35/60 mm/s
+per UNSCALE, Richtungsverriegelung und Fehlerabbruch bei ungültigem AQ.
+Der SPS-Messlauf ergab 100 Impulse und 120 mm; auch der echte LiveProbe-Bedienkanal
+mit laufenden Potentiometeränderungen und Einsetzen/Entnehmen bestand.
+Die WPF-Ansicht wurde separat ohne Siemens geprüft; ein sichtbarer WPF-Analoglauf
+und WinCC sind damit noch nicht live nachgewiesen.
 
 <div align="center">
 
@@ -166,6 +180,12 @@ plant preview. It does not create or start a CPU.
 Check measured values and counters in the TIA watch table. The simulator also
 displays the plant and its I/O signals.
 
+The **AT-2 Übung** profile additionally supports analogue PLC coupling:
+**Potentiometer – SPS-Board, Channel 5** supplies an adjustable AI value;
+the PLC sets the speed through its AQ output. Set both word addresses under
+**Profil einrichten**, using your own TIA hardware configuration.
+[Analogue operation, MOVE and UNSCALE](ANLEITUNG.md#en-analog).
+
 <a name="en-tia-projekte"></a>
 
 ## TIA projects
@@ -205,9 +225,17 @@ can also run without a Siemens installation.
 
 The digital connection was previously tried with the personal reference project.
 A separate AT-3 test variant additionally passed four live checks with PLCSIM
-Advanced V5.0 Update 2 and the C# plant core. Profile selection and changed
-signal addresses remain unverified in live operation. WinCC and the visible
+Advanced V5.0 Update 2 and the C# plant core. Profile selection and freely reassigned
+digital signal addresses remain unverified in live operation. WinCC and the visible
 WPF rendering were not tested in these additional checks.
+
+The analogue extension was separately tested on 8 November 2026 with actual FBD
+MOVE/UNSCALE outputs: signed AI values, 0/50/100 mm/s through MOVE, approximately
+35/60 mm/s through UNSCALE, direction interlocking and fault handling for invalid AQ.
+The PLC measurement run produced 100 pulses and 120 mm. The actual LiveProbe
+control channel also passed, including live potentiometer changes and workpiece
+insertion/removal. The WPF display was tested separately without Siemens;
+a visible WPF analogue session and WinCC remain unverified in live operation.
 
 <div align="center">
 

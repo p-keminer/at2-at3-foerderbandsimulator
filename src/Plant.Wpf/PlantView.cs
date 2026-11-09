@@ -21,6 +21,16 @@ namespace Plant.Wpf
         private static readonly Pen RollerOutline = FrozenPen(RollerBorder, 3), RollerAxis = FrozenPen(Ui.Surface, 2),
             BeltStroke = FrozenPen(BeltMark, 2), WorkpieceOutline = FrozenPen(Ui.Warning, 2),
             SensorActiveLine = FrozenPen(Ui.Accent, 2), SensorIdleLine = FrozenPen(SensorIdle, 2), Outline = FrozenPen(Ui.Ink, 1);
+        private static readonly Brush ReferenceColor = Ui.Brush("#FFE08A");
+        private static readonly Pen ReferenceOutline = FrozenPen(Ui.Ink, 7), ReferenceStroke = FrozenPen(ReferenceColor, 4);
+        private static readonly StreamGeometry ReferencePointer = MakeReferencePointer();
+        internal BeltMarking Marking { get; } = new();
+        private static StreamGeometry MakeReferencePointer()
+        {
+            var geometry = new StreamGeometry(); using (var context = geometry.Open())
+            { context.BeginFigure(new Point(0, 230), true, true); context.LineTo(new Point(-7, 216), true, false); context.LineTo(new Point(7, 216), true, false); }
+            geometry.Freeze(); return geometry;
+        }
         private static readonly RectangleGeometry BeltClip = MakeBeltClip();
         private static RectangleGeometry MakeBeltClip()
         { var geometry = new RectangleGeometry(new Rect(88, 119, 800, 92)); geometry.Freeze(); return geometry; }
@@ -79,6 +89,16 @@ namespace Plant.Wpf
             double shift = ((p.BeltMm % 80) + 80) % 80 / Configuration.BeltLengthMm * 850;
             for (double x = -40 + shift; x < 950; x += 68) dc.DrawLine(BeltStroke, new Point(x, 127), new Point(x + 18, 203));
             dc.Pop();
+            double markPosition = Marking.PositionMm(p.BeltMm);
+            bool markOnScale = Marking.IsOnScale(p.BeltMm, Configuration.BeltLengthMm);
+            if (markOnScale)
+            {
+                double x = X(markPosition);
+                dc.DrawLine(ReferenceOutline, new Point(x, 125), new Point(x, 212));
+                dc.DrawLine(ReferenceStroke, new Point(x, 125), new Point(x, 212));
+                dc.PushTransform(new TranslateTransform(x, 0));
+                dc.DrawGeometry(ReferenceColor, Outline, ReferencePointer); dc.Pop();
+            }
             if (p.Present)
             {
                 double width = p.TrueLengthMm / Configuration.BeltLengthMm * 850;
@@ -94,13 +114,13 @@ namespace Plant.Wpf
                 Label(dc, SensorLabels[i], x - 58, compact ? 10 : 40, 12);
                 Label(dc, preview ? "—" : readings[i].High ? "HIGH" : "LOW", x - 18, compact ? 40 : 58, 11);
             }
-            for (int i = 0; i <= 10; i++)
+            for (double mm = 0; mm <= Configuration.BeltLengthMm; mm += 10)
             {
-                double x = X(Configuration.BeltLengthMm * i / 10);
-                dc.DrawLine(Outline, new Point(x, 235), new Point(x, 243));
-                Label(dc, (Configuration.BeltLengthMm * i / 10).ToString("0", CultureInfo.CurrentCulture), x - 10, 246, 11);
+                double x = X(mm); bool major = mm % 100 == 0;
+                dc.DrawLine(Outline, new Point(x, 235), new Point(x, major ? 247 : mm % 50 == 0 ? 244 : 241));
+                if (major) Label(dc, mm.ToString("0", CultureInfo.CurrentCulture), x - 10, 250, 11);
             }
-            Label(dc, compact ? "Beispiel [mm]" : "mm · Beispielgeometrie", 70, 270, 12);
+            Label(dc, compact ? "mm · Teilung 10" : "mm · Teilung 10 mm · Beispielgeometrie", 70, 273, 12);
             dc.DrawRoundedRectangle(Roller, Outline, new Rect(872, 277, 68, 35), 4, 4);
             Label(dc, "M + Hall", 878, 285, compact ? 10 : 12, Ui.Surface);
             bool[] lamps = { p.Actuators.LampRed, p.Actuators.LampYellow, p.Actuators.LampGreen };
@@ -113,6 +133,9 @@ namespace Plant.Wpf
                 Label(dc, label, 1007, y - 9, scale < .8 ? 10 : 11);
             }
             Label(dc, preview ? "Vorschau · noch keine Bewegungsdaten" : compact ? $"Band {p.BeltMm:F1} · Motor {p.MotorMm:F1} mm" : $"Bandweg {p.BeltMm:F1} mm   |   Motorweg {p.MotorMm:F1} mm", 325, 290, 13, cache: preview);
+            Label(dc, preview ? "Bandmarkierung · Start bei 0 mm" :
+                (compact ? "Marke: " : "Bandmarkierung: ") + $"{markPosition:F1} mm" + (!markOnScale ? " · außerhalb der Skala" : "") +
+                (Snapshot!.Mode == OperationMode.ExternalPlc && !p.Actuators.Valid ? " · letzter Wert" : ""), 70, 315, 12, cache: preview);
             if (compact) dc.Pop();
             dc.Pop();
         }

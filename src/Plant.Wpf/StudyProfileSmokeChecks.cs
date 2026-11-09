@@ -16,7 +16,7 @@ namespace Plant.Wpf
     // In-process WPF events only. No UI Automation client, Computer Use or Siemens API.
     internal static class StudyProfileSmokeChecks
     {
-        private static IEnumerable<DependencyObject> All(DependencyObject node)
+        internal static IEnumerable<DependencyObject> All(DependencyObject node)
         { yield return node; for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) foreach (var child in All(VisualTreeHelper.GetChild(node, i))) yield return child; }
         internal static Task Run(MainWindow window, string directory, Action<bool, string> check)
         {

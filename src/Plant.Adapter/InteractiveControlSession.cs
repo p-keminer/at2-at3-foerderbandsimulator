@@ -11,6 +11,7 @@ namespace Plant.Adapter
         private readonly object gate = new();
         private readonly CancellationTokenSource cancellation = new();
         private readonly WorkpieceCommandChannel? commands;
+        private readonly PotentiometerControl? potentiometer;
         private readonly Timer? lease;
         private readonly int leaseMilliseconds;
         private long lastHeartbeat = Stopwatch.GetTimestamp();
@@ -19,11 +20,12 @@ namespace Plant.Adapter
         public CancellationToken Token => cancellation.Token;
         public string? Failure { get { lock (gate) return failure; } }
         public bool StopRequested { get { lock (gate) return stopped; } }
-        public InteractiveControlSession(WorkpieceCommandChannel? commands, bool interactive, int leaseMilliseconds = 5000)
+        public InteractiveControlSession(WorkpieceCommandChannel? commands, bool interactive, int leaseMilliseconds = 5000, PotentiometerControl? potentiometer = null)
         {
             Numbers.Require(!interactive || commands != null, "Interaktive Sitzung benötigt einen Bedienkanal.");
             Numbers.Require(leaseMilliseconds >= 50 && leaseMilliseconds <= 10000, "Ungültige Lebenszeichenfrist.");
             this.commands = commands; this.leaseMilliseconds = leaseMilliseconds;
+            this.potentiometer = potentiometer;
             if (interactive) lease = new Timer(_ => CheckLease(), null, 25, 25);
         }
         public void Accept(string line)
@@ -34,6 +36,12 @@ namespace Plant.Adapter
                 Numbers.Require(line.Length <= 1024, "Überlanger Bedienbefehl.");
                 if (line == "STOP") { stopped = true; cancellation.Cancel(); return; }
                 if (line == "PING") { lastHeartbeat = Stopwatch.GetTimestamp(); return; }
+                if (line.StartsWith("POTI ", StringComparison.Ordinal))
+                {
+                    Numbers.Require(potentiometer != null, "Potentiometer benötigt ein aktives Analogprofil.");
+                    potentiometer!.SetVoltage(double.Parse(line.Substring(5), System.Globalization.CultureInfo.InvariantCulture));
+                    return;
+                }
                 Numbers.Require(commands != null && line.StartsWith("WORKPIECE ", StringComparison.Ordinal), "Unbekannter Bedienbefehl.");
                 commands!.Enqueue(Json.Read<WorkpieceCommand>(line.Substring(10)));
             }

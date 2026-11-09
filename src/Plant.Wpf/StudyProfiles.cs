@@ -80,7 +80,8 @@ namespace Plant.Wpf
         { selectingProfile = true; ProfileSelect.ItemsSource = studyProfiles.ToArray(); ProfileSelect.SelectedItem = selectedProfile; selectingProfile = false; }
         private void UpdateProfileSummary()
         {
-            profileSummary.Text = selectedProfile.Name + " · " + selectedProfile.Map.Signals.Count(s => DigitalCycleProfile.SignalIds.Contains(s.Id) && s.Confirmed && s.ByteOffset.HasValue) + "/9 Signale" + (string.IsNullOrWhiteSpace(selectedProfile.Map.InstanceName) ? " · CPU-Name fehlt" : " · " + selectedProfile.Map.InstanceName);
+            var required = selectedProfile.DigitalSettings().RequiredSignalIds;
+            profileSummary.Text = selectedProfile.Name + " · " + selectedProfile.Map.Signals.Count(s => required.Contains(s.Id) && s.Confirmed && s.ByteOffset.HasValue) + "/" + required.Count + " Signale" + (selectedProfile.Analog != null ? " · analog" : " · digital") + (string.IsNullOrWhiteSpace(selectedProfile.Map.InstanceName) ? " · CPU-Name fehlt" : " · " + selectedProfile.Map.InstanceName);
             profileSummary.ToolTip = selectedProfile.Description;
             RuntimeConsent.Content = new TextBlock { Text = "Siemens-Zugriff für „" + (selectedProfile.Map.InstanceName ?? "CPU noch wählen") + "“ freigeben", TextWrapping = TextWrapping.Wrap };
         }
@@ -92,9 +93,13 @@ namespace Plant.Wpf
             liveHost.ClearCompletedView(); cpuIndicator.Reset(); liveSamples.Clear(); liveEvents.Clear(); lastLiveDetail = "";
             Reset(profile.Plant);
             selectedProfile = profile;
-            liveConfiguration = null; liveMap = null; lastLiveView = null;
+            liveConfiguration = null; liveMap = null; liveProfile = null; lastLiveView = null;
             liveDraftPresent = false; livePreviewEdited = true; previewConfiguration = null;
             liveSpeed.Text = profile.DigitalSpeedMmPerSecond.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            LivePotentiometer.Maximum = Math.Min(10, profile.Analog?.InputMaximumVolts ?? 10);
+            LivePotentiometer.Value = profile.Analog?.InitialPotentiometerVolts ?? 0;
+            livePotentiometerPanel.Visibility = profile.Analog != null ? Visibility.Visible : Visibility.Collapsed;
+            liveSpeed.IsEnabled = profile.Analog == null;
             liveHallPitch.Text = profile.Plant.HallPitchMm.ToString(System.Globalization.CultureInfo.CurrentCulture);
             liveInitial.Text = profile.Plant.InitialLeftMm.ToString(System.Globalization.CultureInfo.CurrentCulture);
             liveLength.Text = profile.Plant.WorkpieceLengthMm.ToString(System.Globalization.CultureInfo.CurrentCulture);

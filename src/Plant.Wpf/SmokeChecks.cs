@@ -49,6 +49,8 @@ namespace Plant.Wpf
             {
                 Check(window.IsVisible && window.IsLoaded, "Echtes WPF-Fenster geladen und sichtbar");
                 await StudyProfileSmokeChecks.Run(window, directory, Check);
+                AnalogSmokeChecks.Run(window, directory, Check);
+                await BeltMarkingSmokeChecks.Run(window, directory, Check);
                 Find<CheckBox>("Verbindungsdetails und Ereignisse").IsChecked = true;
                 Check(window.Tabs.Items.Count == 4, "Nur vier relevante Diagnosebereiche; keine manuellen oder Demo-Werkzeuge");
                 var plant = Descendants(window).OfType<PlantView>().Single();

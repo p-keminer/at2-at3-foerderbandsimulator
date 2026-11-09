@@ -13,6 +13,8 @@ namespace Plant.Wpf
     {
         private readonly StudyProfile draft;
         private readonly TextBox name, instance, inputSize, outputSize, speed;
+        private readonly CheckBox analogEnabled;
+        private readonly TextBox aiMinimum, aiMaximum, aqMinimum, aqMaximum, potiInitial;
         private readonly Dictionary<string, TextBox> addresses = new();
         private readonly Dictionary<string, TextBox> dimensions = new();
         private readonly List<Action<PlantConfiguration>> applyModel = new();
@@ -21,6 +23,8 @@ namespace Plant.Wpf
         internal ProfileEditorWindow(StudyProfile source, bool copy, Action<StudyProfile>? save = null)
         {
             draft = source.Copy();
+            if (!draft.Map.Signals.Any(s => s.Id == "PotiRaw"))
+                draft.Map.Signals = draft.Map.Signals.Concat(SignalMap.Unbound().Signals.Where(s => s.Id == "PotiRaw")).ToArray();
             if (copy) { draft.Id = Guid.NewGuid().ToString("N"); draft.Name += " (eigene Kopie)"; }
             Title = "Profil einrichten"; Width = Math.Min(760, SystemParameters.WorkArea.Width); Height = Math.Min(820, SystemParameters.WorkArea.Height); MinWidth = 650; MinHeight = 550;
             WindowStartupLocation = WindowStartupLocation.CenterOwner; Background = Ui.Background; Foreground = Ui.Ink;
@@ -38,16 +42,18 @@ namespace Plant.Wpf
             instance = TextField(p, "CPU-Instanzname aus PLCSIM Advanced", draft.Map.InstanceName ?? "");
             p.Children.Add(Ui.Text("Verbindung: lokale virtuelle CPU · PLCSIM Advanced / Softbus", 12, true));
             p.Children.Add(Ui.Text("Speichern verbindet die CPU nicht. Offene Adressen können später ergänzt werden.", 12));
+            analogEnabled = Ui.Check("Analoge SPS-Drehzahl verwenden (AI-Potentiometer und AQ-Motorvorgabe)", draft.Analog != null);
+            p.Children.Add(analogEnabled);
             p = Ui.Section(layout, "Signale zuordnen");
-            p.Children.Add(Ui.Text("Adressen aus deinen TIA-Variablen übernehmen, z. B. I0.0 oder Q0.1. Leer = noch offen.", 12));
+            p.Children.Add(Ui.Text("Adressen aus TIA übernehmen: I0.0 / Q0.1 für Bits, IW… / QW… für Analogwörter. Leer = noch offen.", 12));
             var grid = new Grid(); grid.ColumnDefinitions.Add(new ColumnDefinition()); grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(160) });
             p.Children.Add(grid);
             int row = 0;
-            foreach (var id in DigitalCycleProfile.SignalIds)
+            foreach (var id in DigitalCycleProfile.AnalogSignalIds)
             {
                 var binding = draft.Map.Signals.Single(s => s.Id == id);
                 grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                var label = new Label { Content = SignalLabel(id), ToolTip = id + " · BOOL · " + (binding.Direction == "plant_to_plc" ? "Anlage → SPS" : "SPS → Anlage") };
+                var label = new Label { Content = SignalLabel(id), ToolTip = id + " · " + binding.Type + " · " + (binding.Direction == "plant_to_plc" ? "Anlage → SPS" : "SPS → Anlage") };
                 var box = new TextBox { Text = SignalAddress.Format(binding), Margin = new Thickness(4), Padding = new Thickness(6), MinHeight = 30 };
                 System.Windows.Automation.AutomationProperties.SetName(box, id + " Adresse"); label.Target = box;
                 Grid.SetRow(label, row); Grid.SetRow(box, row); Grid.SetColumn(box, 1); grid.Children.Add(label); grid.Children.Add(box); addresses.Add(id, box); row++;
@@ -56,7 +62,14 @@ namespace Plant.Wpf
             inputSize = Ui.Number(areas, "Eingangsbereich [Bytes, aus TIA]", draft.Map.Signals.Where(s => s.Area == "Input").Max(s => s.AreaSizeBytes));
             outputSize = Ui.Number(areas, "Ausgangsbereich [Bytes, aus TIA]", draft.Map.Signals.Where(s => s.Area == "Output").Max(s => s.AreaSizeBytes));
             speed = Ui.Number(areas, "Digitale Modellgeschwindigkeit [mm/s, max. 100]", draft.DigitalSpeedMmPerSecond);
-            areas.Children.Add(Ui.Text("Dieses Profil verwendet digitale Ein- und Ausgänge.", 12));
+            areas.Children.Add(Ui.Text("Digitaler Test: 9 Signale und feste Testgeschwindigkeit. Analog: zusätzlich IW/QW; Geschwindigkeit kommt aus der SPS. Analogadressen im digitalen Profil leer lassen.", 12));
+            var analog = Ui.Fold(p, "Analoge Modulbereiche und Anfangsstellung");
+            var settings = draft.Analog ?? new AnalogIoSettings();
+            aiMinimum = Ui.Number(analog, "AI Untergrenze [V, AT-2: −10]", settings.InputMinimumVolts);
+            aiMaximum = Ui.Number(analog, "AI Obergrenze [V, AT-2: +10]", settings.InputMaximumVolts);
+            aqMinimum = Ui.Number(analog, "AQ Untergrenze [V, Motor: 0]", settings.OutputMinimumVolts);
+            aqMaximum = Ui.Number(analog, "AQ Obergrenze [V, Motor: 10]", settings.OutputMaximumVolts);
+            potiInitial = Ui.Number(analog, "Potentiometer-Anfangsstellung [V]", settings.InitialPotentiometerVolts);
             var model = Ui.Fold(layout, "Anlagenparameter · Beispielwerte");
             Add(model, "Bandlänge [mm]", draft.Plant.BeltLengthMm, (c, v) => c.BeltLengthMm = v);
             Add(model, "Startposition [mm]", draft.Plant.InitialLeftMm, (c, v) => c.InitialLeftMm = v);
@@ -84,6 +97,7 @@ namespace Plant.Wpf
         }
         internal static string SignalLabel(string id) => id switch {
             "SensorLeftHigh" => "Sensor links · I", "OpticalHigh" => "Optischer Sensor · I", "SensorRightHigh" => "Sensor rechts · I", "HallHigh" => "Hall-Impulse · I",
+            "PotiRaw" => "Potentiometer Channel 5 · IW", "SpeedCommandRaw" => "Drehzahlvorgabe Motor · QW",
             "MotorRight" => "Motor rechts · Q", "MotorLeft" => "Motor links · Q", "LampRed" => "Lampe rot · Q", "LampYellow" => "Lampe gelb · Q", _ => "Lampe grün · Q" };
         private static TextBox TextField(Panel p, string label, string text) { var box = Ui.Number(p, label, 0); box.Text = text; return box; }
         private static long Whole(double n) { Numbers.Require(n == Math.Truncate(n) && n >= int.MinValue && n <= int.MaxValue, "Ganze Zahl im gültigen Bereich eingeben."); return (long)n; }
@@ -96,6 +110,10 @@ namespace Plant.Wpf
         {
             var result = draft.Copy(); result.Name = name.Text.Trim(); result.Map.InstanceName = instance.Text.Trim();
             result.Map.LocalVirtualInstanceConfirmed = true; result.DigitalSpeedMmPerSecond = Ui.Value(speed);
+            result.Analog = analogEnabled.IsChecked == true ? new AnalogIoSettings {
+                InputMinimumVolts = Ui.Value(aiMinimum), InputMaximumVolts = Ui.Value(aiMaximum),
+                OutputMinimumVolts = Ui.Value(aqMinimum), OutputMaximumVolts = Ui.Value(aqMaximum),
+                InitialPotentiometerVolts = Ui.Value(potiInitial) } : null;
             int inputs = (int)Whole(Ui.Value(inputSize)), outputs = (int)Whole(Ui.Value(outputSize));
             Numbers.Require(inputs >= 0 && inputs <= 65536 && outputs >= 0 && outputs <= 65536, "E/A-Bereich: 0 (offen) bis 65536 Bytes.");
             foreach (var binding in result.Map.Signals.Where(b => addresses.ContainsKey(b.Id)))
