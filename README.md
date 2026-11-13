@@ -20,6 +20,7 @@ in S7-PLCSIM Advanced.
 [![Voraussetzungen](https://img.shields.io/badge/Voraussetzungen-24292f?style=for-the-badge)](#de-voraussetzungen)
 [![Start](https://img.shields.io/badge/Start-24292f?style=for-the-badge)](#de-start)
 [![TIA-Projekte](https://img.shields.io/badge/TIA--Projekte-24292f?style=for-the-badge)](#de-tia-projekte)
+[![Erweiterungen](https://img.shields.io/badge/Erweiterungen-24292f?style=for-the-badge)](#de-erweiterungen)
 [![Bauen](https://img.shields.io/badge/Bauen-24292f?style=for-the-badge)](#de-bauen)
 [![Anleitung](https://img.shields.io/badge/Anleitung-24292f?style=for-the-badge)](ANLEITUNG.md#deutsch)
 [![Tests](https://img.shields.io/badge/Tests-24292f?style=for-the-badge)](ANLEITUNG.md#de-pruefungen)
@@ -83,6 +84,21 @@ Eigene Simulatorprofile liegen unter `profiles/` neben der EXE. Zum Umziehen den
 vollständigen Anwendungsordner einschließlich dieser Profile kopieren. Die
 Konfiguration benötigt keine persönlichen absoluten Pfade.
 
+<a name="de-erweiterungen"></a>
+
+## AT-1B und AT-4B
+
+Zusätzlich enthalten sind drei native **LabVIEW-Messstationen für AT-1B**
+(Ultraschall, Radar, induktiver/kapazitiver Näherungssensor), leere Messprotokolle
+und ein PACTware-Offlineprojekt. Mit installiertem LabVIEW **`Start_AT1B.cmd`**
+öffnen; geprüft wurde LabVIEW 2026 Q3, 32 Bit. MCP und Python sind zum Benutzen nicht nötig.
+
+Für **AT-4B** liegen ein [leerer Übungsstart](tia/AT4B_Start_Uebung_Nachbildung_3AN02.zap18)
+und ein [getrennter HMI-Technikprüfstand](tia/AT4B_Technikpruefung_20261113.zap18) vor.
+PN-HMI-Wertetransfers zur virtuellen SPS sind nachgewiesen. DP-Datenaustausch
+und zuverlässig wiederholbare CPU-Starts bleiben offen. LabVIEW liefert keine
+Messwerte an PACTware. [Start, Bedienung, Modelle und Prüfgrenzen](ANLEITUNG.md#de-erweiterungen).
+
 <a name="de-bauen"></a>
 
 ## Selbst bauen
@@ -139,6 +155,7 @@ controls the system.
 [![Requirements](https://img.shields.io/badge/Requirements-24292f?style=for-the-badge)](#en-voraussetzungen)
 [![Start](https://img.shields.io/badge/Start-24292f?style=for-the-badge)](#en-start)
 [![TIA projects](https://img.shields.io/badge/TIA_projects-24292f?style=for-the-badge)](#en-tia-projekte)
+[![Extensions](https://img.shields.io/badge/Extensions-24292f?style=for-the-badge)](#en-erweiterungen)
 [![Build](https://img.shields.io/badge/Build-24292f?style=for-the-badge)](#en-bauen)
 [![Guide](https://img.shields.io/badge/Guide-24292f?style=for-the-badge)](ANLEITUNG.md#english)
 [![Tests](https://img.shields.io/badge/Tests-24292f?style=for-the-badge)](ANLEITUNG.md#en-pruefungen)
@@ -202,6 +219,21 @@ and open `AT2_AT3_test/AT2_AT3.ap18`. Use a working copy for each exercise.
 Your simulator profiles are stored in `profiles/` next to the EXE. To move the
 application, copy the entire application folder, including these profiles.
 The configuration does not require personal absolute paths.
+
+<a name="en-erweiterungen"></a>
+
+## AT-1B and AT-4B
+
+The repository also includes three native **LabVIEW stations for AT-1B**
+(ultrasonic, radar, inductive/capacitive proximity sensors), blank measurement
+sheets and a PACTware offline project. With LabVIEW installed, open **`Start_AT1B.cmd`**;
+tested with LabVIEW 2026 Q3, 32-bit. MCP and Python are not needed for normal use.
+
+**AT-4B** provides an [empty starter](tia/AT4B_Start_Uebung_Nachbildung_3AN02.zap18)
+and a [separate HMI technical test project](tia/AT4B_Technikpruefung_20261113.zap18).
+PN-HMI value transfers to the virtual PLC were verified. DP communication
+and reliably repeatable CPU starts remain open. LabVIEW does not supply
+measurements to PACTware. [Setup, operation, models and verification limits](ANLEITUNG.md#en-erweiterungen).
 
 <a name="en-bauen"></a>
 

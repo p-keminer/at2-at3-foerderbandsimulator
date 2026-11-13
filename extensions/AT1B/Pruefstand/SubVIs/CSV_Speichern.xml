@@ -1,0 +1,14 @@
+<VI _name="CSV_Speichern.vi" description="Create a NEW CSV file, write and close. Existing files are refused. Empty paths return an error without showing a dialog.">
+  <Control uid="1001" uid_parent="root" _name="Datei" type="path" value="" conIdx="11" connection="required" outputs="value:1001.value" />
+  <Control uid="1002" uid_parent="root" _name="Text" type="string" value="" conIdx="10" connection="required" outputs="value:1002.value" />
+  <Node uid="1003" uid_parent="root" _name="Empty String/Path?" inputs="string/path:1001.value" outputs="empty?:1003.out0" />
+  <Constant uid="1004" uid_parent="root" type="cluster{bool.status,int32.code,string.source}" value="[true,5001,dateipfad fehlt - bitte eine neue csv-datei angeben]" outputs="value:1004.value" />
+  <Constant uid="1005" uid_parent="root" type="cluster{bool.status,int32.code,string.source}" value="[false,0,]" outputs="value:1005.value" />
+  <Node uid="1006" uid_parent="root" _name="Select" inputs="t:1004.value,s:1003.out0,f:1005.value" outputs="s? t\3Af:1006.out0" />
+  <Constant uid="1007" uid_parent="root" type="int32" value="2" outputs="value:1007.value" />
+  <Constant uid="1008" uid_parent="root" type="int32" value="0" outputs="value:1008.value" />
+  <Node uid="1009" uid_parent="root" _name="Open/Create/Replace File" inputs="file path (use dialog):1001.value,operation (0\3Aopen):1007.value,access (0\3Aread/write):1008.value,error in:1006.out0" outputs="refnum out:1009.out0,error out:1009.out1" />
+  <Node uid="1010" uid_parent="root" _name="Write to Text File" inputs="file (use dialog):1009.out0,text:1002.value,error in:1009.out1" outputs="refnum out:1010.out0,error out:1010.out1" />
+  <Node uid="1011" uid_parent="root" _name="Close File" inputs="refnum:1010.out0,error in:1010.out1" outputs="error out:1011.out0" />
+  <Indicator uid="1012" uid_parent="root" _name="error out" type="cluster{bool.status,int32.code,string.source}" value="[false,0,]" inputs="value:1011.out0" conIdx="0" connection="recommended" />
+</VI>

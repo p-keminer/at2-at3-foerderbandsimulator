@@ -11,7 +11,7 @@
 
 # Anleitung: Übungsprojekte und virtuelle Siemens-SPS
 
-Stand: 09.11.2026.
+Stand: 13.11.2026.
 
 <div align="center">
 
@@ -20,6 +20,7 @@ Stand: 09.11.2026.
 [![Analog](https://img.shields.io/badge/Analog-24292f?style=for-the-badge)](#de-analog)
 [![Betrieb](https://img.shields.io/badge/Betrieb-24292f?style=for-the-badge)](#de-betrieb)
 [![TIA-Projekte](https://img.shields.io/badge/TIA--Projekte-24292f?style=for-the-badge)](#de-tia-projekte)
+[![AT-1B / AT-4B](https://img.shields.io/badge/AT--1B_%2F_AT--4B-24292f?style=for-the-badge)](#de-erweiterungen)
 [![Modell](https://img.shields.io/badge/Modell-24292f?style=for-the-badge)](#de-modell)
 [![Prüfungen](https://img.shields.io/badge/Pr%C3%BCfungen-24292f?style=for-the-badge)](#de-pruefungen)
 [![Bauen](https://img.shields.io/badge/Bauen-24292f?style=for-the-badge)](#de-bauen)
@@ -311,6 +312,133 @@ Die Übungs-CPUs V2.8 unterscheiden sich von der Referenz-CPU V3.0. Bei der
 Hardwareübersetzung gab es keine Fehler, aber zwei Warnungen zu fehlendem
 Zugriffspasswort und ungeschütztem CPU-Display.
 
+<a name="de-erweiterungen"></a>
+
+## Erweiterungen AT-1B und AT-4B
+
+Die Erweiterungen sind eigenständige Vorbereitungen; sie benötigen den C#-Förderbandsimulator nicht.
+Originale Laborunterlagen und fertig gelöste Versuchsaufgaben werden nicht mitgeliefert.
+
+### AT-1B: LabVIEW-Messstationen
+
+1. Den vollständigen Repository-/Paketordner zusammenlassen und **`Start_AT1B.cmd`** öffnen.
+   Alternativ `extensions/AT1B/Pruefstand/AT1B_Pruefstaende.lvproj` in LabVIEW öffnen.
+2. `AT1B_Ultraschall.vi`, `AT1B_Radar.vi` oder `AT1B_Naeherung.vi` wählen und mit
+   **Strg+R** bzw. dem Ausführen-Pfeil starten. Fahrt und Aufnahme beginnen erst auf Anforderung.
+3. Handposition einstellen und **Position setzen**, oder Start, Ziel, Tempo, Haltezeit,
+   Wiederholungen und Fahrart (Pendeln/Schritte/Einfachfahrt) wählen und **Ablauf starten**.
+   Pause hält die Fahrt; Stop beendet sie. Ultraschall/Näherung verwenden mm, Radar m.
+4. Für Aufnahme **Messung eingeschaltet** und **Aufnahme eingeschaltet** aktivieren.
+   Danach einen neuen CSV-Dateipfad wählen und **CSV speichern**. Vorhandene Dateien
+   werden nicht überschrieben. Acht leere Auswerteblätter liegen unter `extensions/AT1B/Messprotokolle/`.
+5. Mit **Pruefstand beenden** regulär schließen. Ungespeicherte Daten zuerst speichern
+   oder ausdrücklich zum Verwerfen freigeben. Aufnahme, CSV, Beenden und weitere Parameter
+   liegen weiter unten im Frontpanel; dazu scrollen.
+
+Geprüft: LabVIEW 2026 Q3, 32 Bit, 26.3.1f1. Für die Benutzung sind kein MCP, Python,
+DAQ-Gerät oder Siemens erforderlich. Die neun VI-Referenzen sind relativ; native VIs
+sind in LabVIEW bearbeitbar, XML-/Formelquellen liegen daneben. Andere LabVIEW-Versionen
+wurden nicht geprüft. `extensions/manifest.json` enthält Dateiprüfsummen und Prüfstatus.
+
+- **Ultraschall:** Start ohne Teachpunkte; zunächst `NaN`. „Teach-Taste gedrueckt“
+  einschalten, halten, ausschalten. Laut AU004-Handbuch 2–6 s für den Programmiermodus,
+  danach zweimal etwa 1 s für P1/P2; über 6 s invertiert. Reset: Programmiermodus,
+  Echo ausschalten, kurz bestätigen. Die feste Beispielanzeigeskala bleibt nach erneutem Teach erhalten.
+- **Näherung:** NJ8/CJ8 und Probe wählen. Bei „Axial s“ bewegt die Fahrt s, bei
+  „Seitlich x“ bewegt sie x; „Andere Achse“ stellt jeweils die zweite Koordinate.
+  Nullsetzen verändert nur den Maßstabsbezug. Probenbreite 24/40 mm ist separat;
+  Hysterese, Materialfaktoren und die Umrechnung von x nach z selbst auswerten.
+- **Radar:** Füllhöhe und Sensorhöhe bestimmen den tatsächlichen Abstand.
+  Sensorparameter mit **Sensorabgleich uebernehmen**, Auswertegerät gesondert mit
+  **Auswertung uebernehmen** anwenden. Echoverlust/Versorgung aus liefert ungültige Werte und Relais AUS.
+
+**PACTware:** `extensions/AT1B/PACTware/AT1B_Radar_Offline.PW6` mit installiertem
+PACTware 6.2 und VEGA-DTM 2.6.2.2 öffnen und als eigene Kopie speichern.
+Aufbau: VEGA USB → VEGAMET 391 → VEGAPULS C 20 series HART (Gerätefamilie des C22).
+Das jeweilige Gerät doppelt anklicken, um seine Offlineparameter zu öffnen.
+Der Katalog zeigt nur zum gewählten übergeordneten Gerät passende Einträge.
+Anwendung, Einheiten, Abgleich, Dämpfung, Linearisierung und Trendseite wurden geöffnet;
+Speichern und Wiederöffnen einer privaten Parameterkopie wurde geprüft. Ohne Gerät bleibt
+die Trendseite ohne Messdaten. Es besteht keine LabVIEW-DTM-/HART-Kopplung.
+Der geprüfte VEGAMET-Standardabgleich zeigt mA; digitale HART-Auswertung benötigt laut
+Hersteller eine RS232-/Ethernet-Geräteoption. Abgleich in Metern und Relais 2 wurden
+in dieser Offline-DTM-Ansicht nicht nachgewiesen (sichtbar: Relais 1 und 6).
+Andere Relais oder Einheiten daher nicht als Ersatz der Versuchsvorgabe verwenden.
+
+### Modellannahmen für AT-1B
+
+| Bereich | Grundlage und Grenze |
+|---|---|
+| AU004 | Datenblatt: 50–400 mm, 4–20 mA, 3 mm Auflösung, 0,3 s Anlauf. Beispielanzeige fest 50–400 mm; analoge Rampe von Blindzone bis P1. Kein Original-Hochschul-VI. |
+| Teach/Fehler | Kurzzeitfenster 0,7–1,5 s, 30-s-Timeout und 3-mm-Schalthysterese sind Beispiele. Reset führt zu „nicht konfiguriert“; fehlende/ungültige Messwerte als NaN statt erfundener Fehlerströme. |
+| NJ8 | Beispiel: 8 mm Nennabstand, 7,5 % Hysterese; Datenblatt-Materialfaktoren Cu 0,40 / Al 0,42 / Messing 0,50 / V2A 0,72. Keine Kalibrierung eines konkreten Sensors. |
+| CJ8 und Seitenkurve | Einstellbare Beispiel-Materialfaktoren und Empfindlichkeit; elliptische Seitenkante, Beispielreichweite 12 mm. NJ8-Magnetfaktor 1,05 ebenfalls nur Beispiel. 24-/40-mm-Probenbreite und beide Achsen wirken getrennt. |
+| Elektrik | Ideales 0-/24-V-PNP-Modell ohne Last-, Leitungs- und Leckstromeffekte. |
+| Radar | Sensorhöhe 1,5 m ist Beispiel; 60 L belegt keine konkrete Behälterform. Dämpfung erster Ordnung, lineare bzw. liegende Zylindergeometrie als wählbare Varianten; getrennte Strom-/Auswertekette und Relaisfenster. |
+| Zeit/Aufnahme | Feste 20-ms-Modellschritte; Windows darf den Ablauf verlangsamen. Aufnahme alle 100 ms Modellzeit, maximal 10.000 Zeilen. Keine Echtzeit- oder Hardwaregleichheitsgarantie. |
+
+Grundlagen: AT-1B-Versuchsanleitung S. 9–22, AU004-Datenblatt/Handbuch sowie
+NJ8-18GM50-E2 (282965) und CJ8-18GM-E2 (019462). Die Parametrierung und Auswertung
+bleiben Aufgaben des Nutzers. [VEGAMET-391-Handbuch: analoge/digitale Eingänge und Geräteoptionen](https://www.vega.com/api/sitecore/DocumentDownload/Handler?documentContainerId=4478&documentGroupId=36032&fileExtension=pdf&languageId=1&version=03-06-2025).
+
+### AT-4B: Übungsstart und getrennte Technikprüfung
+
+`tia/AT4B_Start_Uebung_Nachbildung_3AN02.zap18` in TIA V18 über **Projekt → Dearchivieren**
+in einen neuen kurzen Ordner holen. Enthalten: CPU und leeres FUP-Main/OB1, Simulation
+aktiviert. HMI, Variablen, FCs, Rechenoperationen und OB1-Aufrufe selbst projektieren.
+Die Adressen aus der Abbildung auf S. 9 stehen separat unter
+`extensions/AT4B/Quellenreferenz_Adressen.csv`; sie sind nicht vorab importiert.
+LReal `%M2.0`, `%M10.0`, `%M18.0` belegt je acht Bytes; `%M26.0` bleibt getrennt.
+Für den abgebildeten Namen `Q1` wurde keine unbelegte Funktion erfunden.
+
+Die Anleitung nennt in einer Fußnote 3AP02; der installierte Katalog enthielt diesen
+Typ nicht. Das beigefügte Datenblatt nennt 3AN02. Die eigene Nachbildung verwendet
+deshalb **6ES7516-3AN02-0AB0, V2.8**; die Firmware ist eine lokale Katalogwahl.
+
+`tia/AT4B_Technikpruefung_20261113.zap18` ist eine separate technische Referenz ohne
+Rechenlösung. Ebenfalls dearchivieren, dann **PLC_1** gezielt in eine lokale virtuelle
+S7-1500 im PLCSIM-Softbus laden und auf **RUN / Default** setzen.
+Im Nachweis: `AT4B_Verbindungstest_20261110`, CPU-X1 `192.168.0.78`.
+**HMI_2 [KTP1200 Basic PN] → Online → Simulation → Starten** verwenden, ohne zusätzlichen
+Variablensimulator. Beide Eingabefelder schreiben LReal nach M2/M10, das gesperrte
+Ausgabefeld liest M18. Eingabe mit Enter bestätigen und in einer TIA-Beobachtungstabelle
+kontrollieren. Ohne eigene Rechenlogik entsteht kein Rechenergebnis.
+Die integrierte **HMI_Verbindung_2** über CPU-X1 und die daran gebundenen Tags sind entscheidend.
+Die Diagnose-Meldungsanzeige überlagert teilweise das erste Feld; dies bleibt ein
+Darstellungsrest des Technikprojekts und gehört nicht in das eigene Übungsbild.
+
+Die Versuchsvorgabe **Basic DP / PROFIBUS** bleibt bestehen; das zusätzliche PN-HMI
+ist die lokale Testalternative. DP-Runtimestart/Übersetzung sind geprüft, DP-Wertetransfer
+nicht. PLCSIM Advanced emuliert keinen physischen PROFIBUS-DP-Bus, Verkabelung oder
+Transfer in ein reales Panel. Spätere CPU-Starts endeten teils mit Timeout; zuverlässig
+wiederholbare Starts bleiben offen. Keine Windows-Netzwerk-/Dienständerungen erforderlich.
+
+### Tatsächlich geprüft – AT-1B/AT-4B
+
+| Prüfung | Ergebnis |
+|---|---|
+| Native LabVIEW-Modell-/Dateifälle, 09.11.2026 | 28 + 10 bestanden |
+| Drei Haupt-VIs nach Tastenfix neu gebaut, 13.11. | nativ ausführbar; 10 Frontpanel-Fälle und 5 Bedienabläufe erneut bestanden |
+| Echte Mausbedienung | Alle Stationen geöffnet/gestartet; Fahrten beobachtet. Nach Fix ein Beenden-Klick an der Näherungsstation, danach unabhängig ausführbarer Leerlauf bestätigt. Fenster 1541×975 / maximiert 1914×1014. |
+| Tastenfix | Aktionsschalter nur nach gelesener TRUE-Anforderung zurücksetzen; verhindert verlorene Klicks. Modell-/Unter-VIs unverändert. |
+| PACTware offline | Parameterseiten, Speichern/Wiederöffnen geprüft; kein HART-/Messwerttransfer |
+| TIA | Übungsstart nativ übersetzt/archiviert/dearchiviert. Technikarchiv frisch dearchiviert und mit CPU und beiden HMIs geöffnet; Softwareübersetzungen 0 Fehler/0 Warnungen, Hardware 0 Fehler/2 Schutzwarnungen. |
+| Echte PN-HMI-Kopplung, 13.11. | HMI→SPS: 55 und 12,5; SPS→HMI: 7,75 und −2,25. Testbytes jeweils restauriert und zurückgelesen. Keine Rechen-FCs gelöst. |
+| Offene Livepunkte | DP-Datenaustausch, negative HMI-Eingabe, wiederholbare CPU-Starts, alle geräteabhängigen DTM-Funktionen und reale Hardware. Keine zusätzlichen Liveprüfungen beim Repo-Upload. |
+
+Vor Veröffentlichung wurden ausschließlich alte eigene Downloadprotokolle aus dem
+Technikarchiv entfernt. Alle nativen Projektdateien blieben bytegleich; ZIP-CRC geprüft.
+Die native Dearchivierung wurde vor dieser Protokollbereinigung nachgewiesen und danach
+nicht erneut wiederholt. Alle eigenen Laufzeit-/MCP-/Computer-Use-Zugriffe sind beendet.
+Die GitHub-Prüfung validiert Dateien und den C#-Teil; sie führt keine LabVIEW-/Siemens-Livetests aus.
+
+Repo-Abnahme am 13.11.2026: `build.ps1 -Test -UiSmoke -SiemensCompile` bestand mit
+129/129 Prüfgruppen, 803 Assertions und 143 WPF-Prüfungen; alle Builds ohne Fehler
+oder Warnungen. `tools/check-public-content.ps1` prüfte die Veröffentlichungskandidaten
+einschließlich VI-/PW6-Prüfsummen, relativer Projektreferenzen, leerer Messprotokolle
+und lokaler Sprunglinks. Das portable Gesamtpaket enthält die Erweiterungen und
+weiterhin nur die vier Dokumentationsdateien; ZIP-CRC und kopierte Prüfsummen bestanden.
+
 <a name="de-modell"></a>
 
 ## Modell und Grenzen
@@ -463,7 +591,7 @@ Ausführung einer Gitlab-Pipeline bleibt somit aus.
 
 # Guide: exercise projects and virtual Siemens PLC
 
-Last updated: 9 November 2026.
+Last updated: 13 November 2026.
 
 <div align="center">
 
@@ -472,6 +600,7 @@ Last updated: 9 November 2026.
 [![Analogue](https://img.shields.io/badge/Analogue-24292f?style=for-the-badge)](#en-analog)
 [![Operation](https://img.shields.io/badge/Operation-24292f?style=for-the-badge)](#en-betrieb)
 [![TIA projects](https://img.shields.io/badge/TIA_projects-24292f?style=for-the-badge)](#en-tia-projekte)
+[![AT-1B / AT-4B](https://img.shields.io/badge/AT--1B_%2F_AT--4B-24292f?style=for-the-badge)](#en-erweiterungen)
 [![Model](https://img.shields.io/badge/Model-24292f?style=for-the-badge)](#en-modell)
 [![Checks](https://img.shields.io/badge/Checks-24292f?style=for-the-badge)](#en-pruefungen)
 [![Build](https://img.shields.io/badge/Build-24292f?style=for-the-badge)](#en-bauen)
@@ -759,6 +888,129 @@ For a fresh exercise, retrieve the unchanged starter archive again.
 The V2.8 exercise CPUs differ from the V3.0 reference CPU. Hardware compilation
 reported no errors, but two warnings about the missing access password and
 unprotected CPU display.
+
+<a name="en-erweiterungen"></a>
+
+## AT-1B and AT-4B extensions
+
+These are independent preparation tools; they do not require the C# conveyor simulator.
+Original course documents and completed exercise solutions are not included.
+
+### AT-1B: LabVIEW stations
+
+1. Keep the complete repository/package together and open **`Start_AT1B.cmd`**,
+   or open `extensions/AT1B/Pruefstand/AT1B_Pruefstaende.lvproj` in LabVIEW.
+2. Choose `AT1B_Ultraschall.vi`, `AT1B_Radar.vi` or `AT1B_Naeherung.vi` and run
+   with **Ctrl+R** or the Run arrow. Motion and recording only start when requested.
+3. Set **Handposition**, then **Position setzen**; or select start/end, speed,
+   dwell, repetitions and motion mode (shuttle/steps/one-way), then **Ablauf starten**.
+   Pause holds motion; Stop ends it. Ultrasonic/proximity units are mm, radar uses m.
+4. Enable **Messung eingeschaltet** and **Aufnahme eingeschaltet** to record.
+   Choose a new CSV path and **CSV speichern**. Existing files are never overwritten.
+   Eight blank sheets are in `extensions/AT1B/Messprotokolle/`.
+5. Exit normally using **Pruefstand beenden**. Save unsaved data or explicitly allow
+   discarding it. Scroll down for recording, CSV, exit and further device parameters.
+
+Tested with LabVIEW 2026 Q3, 32-bit, 26.3.1f1. Normal use requires no MCP, Python,
+DAQ device or Siemens software. All nine VI references are relative; native VIs
+are editable in LabVIEW and XML/formula sources are included. Other LabVIEW versions
+were not tested. `extensions/manifest.json` records hashes and verification status.
+
+- **Ultrasonic:** starts without taught points, initially `NaN`. Turn
+  **Teach-Taste gedrueckt** on, hold, then off. AU004 manual: 2–6 s to enter programming,
+  then approximately 1 s each for P1/P2; over 6 s inverts. Reset: enter programming,
+  disable echo, briefly confirm. The example instrument scale stays fixed after teaching.
+- **Proximity:** select NJ8/CJ8 and specimen. **Axial s** moves s; **Seitlich x** moves x.
+  **Andere Achse** sets the remaining coordinate. Zeroing changes only the ruler reference.
+  Specimen width 24/40 mm is independent; calculate hysteresis, material factors and x→z yourself.
+- **Radar:** fill level and sensor height determine physical distance. Apply sensor
+  parameters with **Sensorabgleich uebernehmen**, then the controller separately with
+  **Auswertung uebernehmen**. Echo/power loss invalidates measurements and switches the relay OFF.
+
+**PACTware:** open `extensions/AT1B/PACTware/AT1B_Radar_Offline.PW6` in installed
+PACTware 6.2 with VEGA-DTM 2.6.2.2; save your own copy. Hierarchy: VEGA USB →
+VEGAMET 391 → VEGAPULS C 20 series HART (the C22 device family). Double-click a
+device for offline parameters. The catalogue only lists devices compatible with the
+selected parent. Application, units, adjustment, damping, linearization and trend pages
+were opened; saving/reopening a private parameter copy was verified. Without a device,
+the trend has no measurements. There is no LabVIEW-DTM/HART connection.
+The tested default VEGAMET adjustment uses mA. Digital HART evaluation requires an
+RS232/Ethernet device option according to the manufacturer. Distance adjustment and
+relay 2 were not verified in this offline DTM (relays 1 and 6 were visible).
+Do not substitute unrelated relays or units for the exercise requirements.
+
+### AT-1B model assumptions
+
+| Area | Basis and limitation |
+|---|---|
+| AU004 | Datasheet: 50–400 mm, 4–20 mA, 3 mm resolution, 0.3 s startup. Fixed example display scale 50–400 mm; analogue ramp from blind zone to P1. Not the original university VI. |
+| Teach/faults | Brief-press window 0.7–1.5 s, 30 s timeout and 3 mm hysteresis are examples. Reset returns to unconfigured; invalid/missing measurements use NaN, not invented fault currents. |
+| NJ8 | Example: 8 mm nominal distance, 7.5% hysteresis; datasheet factors Cu 0.40 / Al 0.42 / brass 0.50 / V2A 0.72. Not a calibration of an individual sensor. |
+| CJ8/lateral curve | Adjustable example material factors/sensitivity; elliptical lateral edge, example reach 12 mm. NJ8 magnet factor 1.05 is also an assumption. Width 24/40 mm and both axes act separately. |
+| Electrical model | Ideal 0/24 V PNP output without load, cable or leakage effects. |
+| Radar | Example sensor height 1.5 m; 60 L alone does not establish tank shape. First-order damping, linear or horizontal-cylinder geometry as alternatives; independent current/controller chain and relay window. |
+| Time/recording | Fixed 20 ms model steps; Windows may slow the sequence. Record every 100 ms model time, up to 10,000 rows. No real-time or hardware-equivalence guarantee. |
+
+Sources: AT-1B exercise manual pp. 9–22, AU004 datasheet/manual,
+NJ8-18GM50-E2 (282965), CJ8-18GM-E2 (019462). Configuration and analysis remain
+student tasks. [VEGAMET 391 manual: analogue/digital inputs and device options](https://www.vega.com/api/sitecore/DocumentDownload/Handler?documentContainerId=4478&documentGroupId=36032&fileExtension=pdf&languageId=1&version=03-06-2025).
+
+### AT-4B: starter and separate technical test
+
+Retrieve `tia/AT4B_Start_Uebung_Nachbildung_3AN02.zap18` using **Project → Retrieve**
+in TIA V18 into a new short directory. It contains a CPU and empty FBD Main/OB1 with
+simulation enabled. Create HMI, tags, FCs, arithmetic and OB1 calls yourself.
+The addresses shown on exercise p. 9 are in `extensions/AT4B/Quellenreferenz_Adressen.csv`;
+they are not pre-imported. LReal `%M2.0`, `%M10.0`, `%M18.0` each occupies eight bytes;
+`%M26.0` is separate. No unsupported function was invented for the illustrated name `Q1`.
+
+The exercise footnote names 3AP02, which was unavailable in the installed catalogue.
+The supplied datasheet names 3AN02. This reconstruction therefore uses
+**6ES7516-3AN02-0AB0, V2.8**; the firmware is a local catalogue choice.
+
+`tia/AT4B_Technikpruefung_20261113.zap18` is a separate technical reference without
+an arithmetic solution. Retrieve it, explicitly download **PLC_1** to a local virtual
+S7-1500 in PLCSIM Softbus and put it into **RUN / Default**. The verified setup used
+`AT4B_Verbindungstest_20261110`, CPU-X1 `192.168.0.78`.
+Select **HMI_2 [KTP1200 Basic PN] → Online → Simulation → Start**, without an additional
+tag simulator. The two input fields write LReal to M2/M10; the read-only output reads M18.
+Confirm entries with Enter and check a TIA watch table. Without your arithmetic logic,
+the inputs do not produce a calculated result. The integrated **HMI_Verbindung_2**
+through CPU-X1 and the tag bindings to that connection are essential.
+The diagnostic alarm view partly overlaps the first input field; this remains a display
+issue in the technical reference and does not belong in your own exercise screen.
+
+The original requirement remains **Basic DP / PROFIBUS**; the added PN HMI is the
+local test alternative. DP runtime startup/compilation were checked; DP value transfer
+was not. PLCSIM Advanced does not emulate a physical PROFIBUS-DP bus, wiring or real
+panel transfer. Later CPU starts sometimes timed out; reliably repeatable starts remain
+open. No Windows network or service changes are required.
+
+### Checks actually performed – AT-1B/AT-4B
+
+| Check | Result |
+|---|---|
+| Native LabVIEW model/file cases, 9 November 2026 | 28 + 10 passed |
+| Three main VIs rebuilt after button fix, 13 November | Native executable; 10 front-panel cases and 5 workflows passed again |
+| Actual mouse operation | All stations opened/started, motion observed. One proximity Quit click after the fix, independently confirmed executable idle. Windows 1541×975 / maximized 1914×1014. |
+| Button fix | Reset action buttons only after a sampled TRUE request, preventing lost clicks. Model/subVIs unchanged. |
+| PACTware offline | Parameter pages and save/reopen checked; no HART/measurement transfer |
+| TIA | Starter natively compiled/archived/retrieved. Technical archive freshly retrieved and opened with CPU and both HMIs; software compilation 0 errors/0 warnings, hardware 0 errors/2 protection warnings. |
+| Actual PN-HMI coupling, 13 November | HMI→PLC: 55 and 12.5; PLC→HMI: 7.75 and −2.25. Original test bytes restored and read back each time. No arithmetic FC solution provided. |
+| Open live checks | DP transfer, negative HMI input, repeatable CPU startup, all device-specific DTM functions and physical hardware. No additional live checks during repository publication. |
+
+Only old assistant-generated download logs were removed from the technical archive
+before publication. All native project members remain byte-identical; ZIP CRC checked.
+Native retrieval was verified before log removal and was not repeated afterwards.
+All owned runtime/MCP/Computer Use sessions were ended. GitHub checks files and the
+C# component; it does not execute LabVIEW/Siemens live tests.
+
+Repository checks on 13 November 2026: `build.ps1 -Test -UiSmoke -SiemensCompile`
+passed 129/129 test groups, 803 assertions and 143 WPF checks; all builds had no
+errors or warnings. `tools/check-public-content.ps1` checked publication candidates,
+including VI/PW6 hashes, relative project references, blank sheets and local anchors.
+The portable package includes the extensions and only the same four documentation
+files; ZIP CRC and copied file hashes passed.
 
 <a name="en-modell"></a>
 

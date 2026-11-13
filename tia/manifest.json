@@ -21,6 +21,20 @@
       "sha256": "979b2bec765d4d7c781110897022072babaf36f246a632f8c4750113cb70115f",
       "bytes": 8740824,
       "files": 61
+    },
+    {
+      "file": "AT4B_Start_Uebung_Nachbildung_3AN02.zap18",
+      "kind": "TIA V18 starter archive; empty FBD Main; no HMI or solution",
+      "sha256": "0cdfbfb675de1a7d81ee93186edb7e4e8c953ac34ce6cb4461b140301fa66651",
+      "bytes": 342068,
+      "revision": "AT4B preparation - 2026-11-13"
+    },
+    {
+      "file": "AT4B_Technikpruefung_20261113.zap18",
+      "kind": "TIA V18 technical proof; separate PN and DP HMIs; no arithmetic solution",
+      "sha256": "c3595eed9035ef8c2712adc0f2342fa524540cc443f08fe17a808183c27cb53c",
+      "bytes": 16289994,
+      "revision": "AT4B preparation - 2026-11-13"
     }
   ]
 }

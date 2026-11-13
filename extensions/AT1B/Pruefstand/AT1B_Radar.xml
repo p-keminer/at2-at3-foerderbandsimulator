@@ -1,0 +1,378 @@
+<VI _name="AT1B_Radar.vi" description="Virtuelle 4-20-mA-Kette mit eigenem Trend; keine HART- oder DTM-Verbindung. Sensor und Auswertung getrennt abgleichen. Weitere Einstellungen unterhalb der Aufnahme.&#10;Geometrie und liegender Zylinder sind Beispiele.">
+  <Structure uid="1001" uid_parent="root" _name="While Loop" count="1001.i" label="Virtueller Pruefstand - 20 ms Modellschritt">
+    <Constant uid="1002" uid_parent="1001" type="double" value="0.02" outputs="value:1002.value" />
+    <Constant uid="1003" uid_parent="1001" type="double" value="0" outputs="value:1003.value" />
+    <Constant uid="1004" uid_parent="1001" type="double" value="1" outputs="value:1004.value" />
+    <Constant uid="1005" uid_parent="1001" type="bool" value="false" outputs="value:1005.value" />
+    <Constant uid="1006" uid_parent="1001" type="string" value="AT-1B / VEGAPULS C22 und VEGAMET 391 - Fuellhoehe in m" outputs="value:1006.value" />
+    <Indicator uid="1007" uid_parent="1001" _name="Pruefstand" type="string" value="AT-1B / VEGAPULS C22 und VEGAMET 391 - Fuellhoehe in m" inputs="value:1006.value" />
+    <Constant uid="1008" uid_parent="1001" type="string" value="Virtuelle 4-20-mA-Kette mit eigenem Trend; keine HART- oder DTM-Verbindung. Sensor und Auswertung getrennt abgleichen. Weitere Einstellungen unterhalb der Aufnahme.\0AGeometrie und liegender Zylinder sind Beispiele." outputs="value:1008.value" />
+    <Indicator uid="1009" uid_parent="1001" _name="Kurzhilfe" type="string" value="Virtuelle 4-20-mA-Kette mit eigenem Trend; keine HART- oder DTM-Verbindung. Sensor und Auswertung getrennt abgleichen. Weitere Einstellungen unterhalb der Aufnahme.\0AGeometrie und liegender Zylinder sind Beispiele." inputs="value:1008.value" />
+    <Node uid="1010" uid_parent="1001" _name="Equal?" inputs="x:1001.i,y:1003.value" outputs="x = y?:1010.out0" />
+    <Constant uid="1011" uid_parent="1001" type="uint32" value="20" outputs="value:1011.value" />
+    <Node uid="1012" uid_parent="1001" _name="Wait (ms)" inputs="milliseconds to wait:1011.value" outputs="" />
+    <Control uid="1013" uid_parent="1001" _name="Handposition" type="double" value="0.3" outputs="value:1013.value" />
+    <Control uid="1014" uid_parent="1001" _name="Position setzen" type="bool" value="false" outputs="value:1014.value" />
+    <Structure uid="1015" uid_parent="1001" _name="Case Structure" selectin="1014.value">
+      <CaseFrame uid="1016" uid_parent="1015" selector="True" selectout="">
+        <Constant uid="1017" uid_parent="1016" type="bool" value="false" outputs="value:1017.value" />
+        <Node uid="1018" uid_parent="1016" _name="Property Node" fields="write+Value" type="{LV.Boolean}" link="Position setzen" inputs="Value:1017.value" outputs="error out:1018.out0" />
+      </CaseFrame>
+      <CaseFrame uid="1019" uid_parent="1015" selector="False" selectout="" />
+    </Structure>
+    <Control uid="1020" uid_parent="1001" _name="Startposition" type="double" value="0" outputs="value:1020.value" />
+    <Control uid="1021" uid_parent="1001" _name="Endposition" type="double" value="1.2" outputs="value:1021.value" />
+    <Control uid="1022" uid_parent="1001" _name="Tempo pro Sekunde" type="double" value="0.05" outputs="value:1022.value" />
+    <Control uid="1023" uid_parent="1001" _name="Haltezeit [s]" type="double" value="0.5" outputs="value:1023.value" />
+    <Control uid="1024" uid_parent="1001" _name="Wiederholungen" type="double" value="1" outputs="value:1024.value" />
+    <Control uid="1025" uid_parent="1001" _name="Fahrtart" type="uint16{Pendeln,Schritte,Einfachfahrt}" value="0" outputs="value:1025.value" />
+    <Control uid="1026" uid_parent="1001" _name="Schrittweite" type="double" value="0.01" outputs="value:1026.value" />
+    <Control uid="1027" uid_parent="1001" _name="Ablauf starten" type="bool" value="false" outputs="value:1027.value" />
+    <Structure uid="1028" uid_parent="1001" _name="Case Structure" selectin="1027.value">
+      <CaseFrame uid="1029" uid_parent="1028" selector="True" selectout="">
+        <Constant uid="1030" uid_parent="1029" type="bool" value="false" outputs="value:1030.value" />
+        <Node uid="1031" uid_parent="1029" _name="Property Node" fields="write+Value" type="{LV.Boolean}" link="Ablauf starten" inputs="Value:1030.value" outputs="error out:1031.out0" />
+      </CaseFrame>
+      <CaseFrame uid="1032" uid_parent="1028" selector="False" selectout="" />
+    </Structure>
+    <Control uid="1033" uid_parent="1001" _name="Bewegung stoppen" type="bool" value="false" outputs="value:1033.value" />
+    <Structure uid="1034" uid_parent="1001" _name="Case Structure" selectin="1033.value">
+      <CaseFrame uid="1035" uid_parent="1034" selector="True" selectout="">
+        <Constant uid="1036" uid_parent="1035" type="bool" value="false" outputs="value:1036.value" />
+        <Node uid="1037" uid_parent="1035" _name="Property Node" fields="write+Value" type="{LV.Boolean}" link="Bewegung stoppen" inputs="Value:1036.value" outputs="error out:1037.out0" />
+      </CaseFrame>
+      <CaseFrame uid="1038" uid_parent="1034" selector="False" selectout="" />
+    </Structure>
+    <Control uid="1039" uid_parent="1001" _name="Bewegung pausieren" type="bool" value="false" outputs="value:1039.value" />
+    <ShiftReg uid="1041" uid_parent="1001">
+      <Left uid="1042" uid_parent="1041" inputs="value:1040.value" outputs="value:1042.value" />
+      <Right uid="1043" uid_parent="1041" inputs="value:1057.out0" outputs="value:" />
+    </ShiftReg>
+    <Constant uid="1044" uid_parent="1001" type="double" value="1" outputs="value:1044.value" />
+    <Constant uid="1045" uid_parent="1001" type="double" value="0" outputs="value:1045.value" />
+    <Node uid="1046" uid_parent="1001" _name="Select" inputs="t:1044.value,s:1027.value,f:1045.value" outputs="s? t\3Af:1046.out0" />
+    <Constant uid="1047" uid_parent="1001" type="double" value="1" outputs="value:1047.value" />
+    <Constant uid="1048" uid_parent="1001" type="double" value="0" outputs="value:1048.value" />
+    <Node uid="1049" uid_parent="1001" _name="Select" inputs="t:1047.value,s:1039.value,f:1048.value" outputs="s? t\3Af:1049.out0" />
+    <Constant uid="1050" uid_parent="1001" type="double" value="1" outputs="value:1050.value" />
+    <Constant uid="1051" uid_parent="1001" type="double" value="0" outputs="value:1051.value" />
+    <Node uid="1052" uid_parent="1001" _name="Select" inputs="t:1050.value,s:1014.value,f:1051.value" outputs="s? t\3Af:1052.out0" />
+    <Constant uid="1053" uid_parent="1001" type="double" value="1" outputs="value:1053.value" />
+    <Constant uid="1054" uid_parent="1001" type="double" value="0" outputs="value:1054.value" />
+    <Node uid="1055" uid_parent="1001" _name="Select" inputs="t:1053.value,s:1033.value,f:1054.value" outputs="s? t\3Af:1055.out0" />
+    <Node uid="1056" uid_parent="1001" _name="Build Array" inputs="element:1002.value,element:1020.value,element:1021.value,element:1022.value,element:1023.value,element:1024.value,element:1046.out0,element:1049.out0,element:1052.out0,element:1013.value,element:1025.value,element:1026.value,element:1055.out0" outputs="appended array:1056.out0" />
+    <Call uid="1057" uid_parent="1001" target="Trajektorie.vi" inputs="Parameters:1056.out0,StateIn:1042.value" outputs="StateOut:1057.out0,Values:1057.out1" />
+    <Constant uid="1058" uid_parent="1001" type="int32" value="0" outputs="value:1058.value" />
+    <Node uid="1059" uid_parent="1001" _name="Index Array" inputs="array:1057.out1,index:1058.value" outputs="element:1059.out0" />
+    <Constant uid="1060" uid_parent="1001" type="int32" value="3" outputs="value:1060.value" />
+    <Node uid="1061" uid_parent="1001" _name="Index Array" inputs="array:1057.out1,index:1060.value" outputs="element:1061.out0" />
+    <Constant uid="1062" uid_parent="1001" type="int32" value="4" outputs="value:1062.value" />
+    <Node uid="1063" uid_parent="1001" _name="Index Array" inputs="array:1057.out1,index:1062.value" outputs="element:1063.out0" />
+    <Constant uid="1064" uid_parent="1001" type="double" value="0" outputs="value:1064.value" />
+    <Node uid="1065" uid_parent="1001" _name="Greater?" inputs="x:1063.out0,y:1064.value" outputs="x &gt; y?:1065.out0" />
+    <Constant uid="1066" uid_parent="1001" type="int32" value="1" outputs="value:1066.value" />
+    <Node uid="1067" uid_parent="1001" _name="Index Array" inputs="array:1057.out1,index:1066.value" outputs="element:1067.out0" />
+    <Constant uid="1068" uid_parent="1001" type="double" value="0" outputs="value:1068.value" />
+    <Node uid="1069" uid_parent="1001" _name="Greater?" inputs="x:1067.out0,y:1068.value" outputs="x &gt; y?:1069.out0" />
+    <Indicator uid="1070" uid_parent="1001" _name="Position aktuell" type="double" value="0" inputs="value:1059.out0" />
+    <Indicator uid="1071" uid_parent="1001" _name="Fahrt aktiv" type="bool" value="false" inputs="value:1069.out0" />
+    <Constant uid="1072" uid_parent="1001" type="int32" value="2" outputs="value:1072.value" />
+    <Node uid="1073" uid_parent="1001" _name="Index Array" inputs="array:1057.out1,index:1072.value" outputs="element:1073.out0" />
+    <Indicator uid="1074" uid_parent="1001" _name="Abgeschlossene Fahrten" type="double" value="0" inputs="value:1073.out0" />
+    <Control uid="1075" uid_parent="1001" _name="Geraete eingeschaltet" type="bool" value="true" outputs="value:1075.value" />
+    <Control uid="1076" uid_parent="1001" _name="Echo vorhanden" type="bool" value="true" outputs="value:1076.value" />
+    <Control uid="1077" uid_parent="1001" _name="Sensorhoehe ueber Boden [m] - Beispiel" type="double" value="1.5" outputs="value:1077.value" />
+    <Control uid="1078" uid_parent="1001" _name="Messoffset [m] - Beispiel" type="double" value="0" outputs="value:1078.value" />
+    <Control uid="1079" uid_parent="1001" _name="Daempfung [s]" type="double" value="0" outputs="value:1079.value" />
+    <Control uid="1080" uid_parent="1001" _name="Sensordistanz bei 0 % [m]" type="double" value="0" outputs="value:1080.value" />
+    <Control uid="1081" uid_parent="1001" _name="Sensordistanz bei 100 % [m]" type="double" value="0" outputs="value:1081.value" />
+    <Control uid="1082" uid_parent="1001" _name="Sensor-Linearisierung" type="uint16{Linear,Zylinder liegend - Beispiel}" value="0" outputs="value:1082.value" />
+    <Control uid="1083" uid_parent="1001" _name="Sensorabgleich uebernehmen" type="bool" value="false" outputs="value:1083.value" />
+    <Structure uid="1084" uid_parent="1001" _name="Case Structure" selectin="1083.value">
+      <CaseFrame uid="1085" uid_parent="1084" selector="True" selectout="">
+        <Constant uid="1086" uid_parent="1085" type="bool" value="false" outputs="value:1086.value" />
+        <Node uid="1087" uid_parent="1085" _name="Property Node" fields="write+Value" type="{LV.Boolean}" link="Sensorabgleich uebernehmen" inputs="Value:1086.value" outputs="error out:1087.out0" />
+      </CaseFrame>
+      <CaseFrame uid="1088" uid_parent="1084" selector="False" selectout="" />
+    </Structure>
+    <Control uid="1089" uid_parent="1001" _name="Auswertung Strom bei 0 % [mA]" type="double" value="4" outputs="value:1089.value" />
+    <Control uid="1090" uid_parent="1001" _name="Auswertung Strom bei 100 % [mA]" type="double" value="20" outputs="value:1090.value" />
+    <Control uid="1091" uid_parent="1001" _name="Auswertung Linearisierung" type="uint16{Linear,Zylinder liegend - Beispiel}" value="0" outputs="value:1091.value" />
+    <Control uid="1092" uid_parent="1001" _name="Skalenwert bei 0 %" type="double" value="0" outputs="value:1092.value" />
+    <Control uid="1093" uid_parent="1001" _name="Skalenwert bei 100 %" type="double" value="0" outputs="value:1093.value" />
+    <Control uid="1094" uid_parent="1001" _name="Relais 2 Untergrenze [%]" type="double" value="0" outputs="value:1094.value" />
+    <Control uid="1095" uid_parent="1001" _name="Relais 2 Obergrenze [%]" type="double" value="0" outputs="value:1095.value" />
+    <Control uid="1096" uid_parent="1001" _name="Relais 2 Betriebsart" type="uint16{Aus,Fenster ein,Fenster aus}" value="0" outputs="value:1096.value" />
+    <Control uid="1097" uid_parent="1001" _name="Auswertung uebernehmen" type="bool" value="false" outputs="value:1097.value" />
+    <Structure uid="1098" uid_parent="1001" _name="Case Structure" selectin="1097.value">
+      <CaseFrame uid="1099" uid_parent="1098" selector="True" selectout="">
+        <Constant uid="1100" uid_parent="1099" type="bool" value="false" outputs="value:1100.value" />
+        <Node uid="1101" uid_parent="1099" _name="Property Node" fields="write+Value" type="{LV.Boolean}" link="Auswertung uebernehmen" inputs="Value:1100.value" outputs="error out:1101.out0" />
+      </CaseFrame>
+      <CaseFrame uid="1102" uid_parent="1098" selector="False" selectout="" />
+    </Structure>
+    <Constant uid="1103" uid_parent="1001" type="double" value="1" outputs="value:1103.value" />
+    <Constant uid="1104" uid_parent="1001" type="double" value="0" outputs="value:1104.value" />
+    <Node uid="1105" uid_parent="1001" _name="Select" inputs="t:1103.value,s:1076.value,f:1104.value" outputs="s? t\3Af:1105.out0" />
+    <Constant uid="1106" uid_parent="1001" type="double" value="1" outputs="value:1106.value" />
+    <Constant uid="1107" uid_parent="1001" type="double" value="0" outputs="value:1107.value" />
+    <Node uid="1108" uid_parent="1001" _name="Select" inputs="t:1106.value,s:1075.value,f:1107.value" outputs="s? t\3Af:1108.out0" />
+    <Constant uid="1109" uid_parent="1001" type="double" value="1" outputs="value:1109.value" />
+    <Constant uid="1110" uid_parent="1001" type="double" value="0" outputs="value:1110.value" />
+    <Node uid="1111" uid_parent="1001" _name="Select" inputs="t:1109.value,s:1083.value,f:1110.value" outputs="s? t\3Af:1111.out0" />
+    <Constant uid="1112" uid_parent="1001" type="double" value="1" outputs="value:1112.value" />
+    <Constant uid="1113" uid_parent="1001" type="double" value="0" outputs="value:1113.value" />
+    <Node uid="1114" uid_parent="1001" _name="Select" inputs="t:1112.value,s:1097.value,f:1113.value" outputs="s? t\3Af:1114.out0" />
+    <ShiftReg uid="1116" uid_parent="1001">
+      <Left uid="1117" uid_parent="1116" inputs="value:1115.value" outputs="value:1117.value" />
+      <Right uid="1118" uid_parent="1116" inputs="value:1120.out0" outputs="value:" />
+    </ShiftReg>
+    <Node uid="1119" uid_parent="1001" _name="Build Array" inputs="element:1002.value,element:1077.value,element:1059.out0,element:1105.out0,element:1108.out0,element:1078.value,element:1079.value,element:1080.value,element:1081.value,element:1082.value,element:1111.out0,element:1089.value,element:1090.value,element:1091.value,element:1092.value,element:1093.value,element:1094.value,element:1095.value,element:1096.value,element:1114.out0" outputs="appended array:1119.out0" />
+    <Call uid="1120" uid_parent="1001" target="Radar_Schritt.vi" inputs="Parameters:1119.out0,StateIn:1117.value" outputs="StateOut:1120.out0,Values:1120.out1" />
+    <Control uid="1121" uid_parent="1001" _name="Messung eingeschaltet" type="bool" value="true" outputs="value:1121.value" />
+    <ShiftReg uid="1123" uid_parent="1001">
+      <Left uid="1124" uid_parent="1123" inputs="value:1122.value" outputs="value:1124.value" />
+      <Right uid="1125" uid_parent="1123" inputs="value:1126.out0" outputs="value:" />
+    </ShiftReg>
+    <Node uid="1126" uid_parent="1001" _name="Select" inputs="t:1120.out1,s:1121.value,f:1124.value" outputs="s? t\3Af:1126.out0" />
+    <Constant uid="1127" uid_parent="1001" type="int32" value="0" outputs="value:1127.value" />
+    <Node uid="1128" uid_parent="1001" _name="Index Array" inputs="array:1126.out0,index:1127.value" outputs="element:1128.out0" />
+    <Indicator uid="1129" uid_parent="1001" _name="Distanz [m]" type="double" value="NaN" inputs="value:1128.out0" />
+    <Constant uid="1130" uid_parent="1001" type="int32" value="1" outputs="value:1130.value" />
+    <Node uid="1131" uid_parent="1001" _name="Index Array" inputs="array:1126.out0,index:1130.value" outputs="element:1131.out0" />
+    <Indicator uid="1132" uid_parent="1001" _name="Sensor [%]" type="double" value="NaN" inputs="value:1131.out0" />
+    <Constant uid="1133" uid_parent="1001" type="int32" value="2" outputs="value:1133.value" />
+    <Node uid="1134" uid_parent="1001" _name="Index Array" inputs="array:1126.out0,index:1133.value" outputs="element:1134.out0" />
+    <Indicator uid="1135" uid_parent="1001" _name="Sensor linearisiert [%]" type="double" value="NaN" inputs="value:1134.out0" />
+    <Constant uid="1136" uid_parent="1001" type="int32" value="3" outputs="value:1136.value" />
+    <Node uid="1137" uid_parent="1001" _name="Index Array" inputs="array:1126.out0,index:1136.value" outputs="element:1137.out0" />
+    <Indicator uid="1138" uid_parent="1001" _name="Strom [mA]" type="double" value="NaN" inputs="value:1137.out0" />
+    <Constant uid="1139" uid_parent="1001" type="int32" value="4" outputs="value:1139.value" />
+    <Node uid="1140" uid_parent="1001" _name="Index Array" inputs="array:1126.out0,index:1139.value" outputs="element:1140.out0" />
+    <Indicator uid="1141" uid_parent="1001" _name="Auswertung [%]" type="double" value="NaN" inputs="value:1140.out0" />
+    <Constant uid="1142" uid_parent="1001" type="int32" value="5" outputs="value:1142.value" />
+    <Node uid="1143" uid_parent="1001" _name="Index Array" inputs="array:1126.out0,index:1142.value" outputs="element:1143.out0" />
+    <Indicator uid="1144" uid_parent="1001" _name="Auswertung linearisiert [%]" type="double" value="NaN" inputs="value:1143.out0" />
+    <Constant uid="1145" uid_parent="1001" type="int32" value="6" outputs="value:1145.value" />
+    <Node uid="1146" uid_parent="1001" _name="Index Array" inputs="array:1126.out0,index:1145.value" outputs="element:1146.out0" />
+    <Indicator uid="1147" uid_parent="1001" _name="Skalenwert" type="double" value="NaN" inputs="value:1146.out0" />
+    <Constant uid="1148" uid_parent="1001" type="int32" value="8" outputs="value:1148.value" />
+    <Node uid="1149" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1148.value" outputs="element:1149.out0" />
+    <Constant uid="1150" uid_parent="1001" type="double" value="0" outputs="value:1150.value" />
+    <Node uid="1151" uid_parent="1001" _name="Greater?" inputs="x:1149.out0,y:1150.value" outputs="x &gt; y?:1151.out0" />
+    <Indicator uid="1152" uid_parent="1001" _name="Relais 2" type="bool" value="false" inputs="value:1151.out0" />
+    <Node uid="1153" uid_parent="1001" _name="Not" inputs="x:1121.value" outputs=".not. x?:1153.out0" />
+    <Indicator uid="1154" uid_parent="1001" _name="Messung angehalten - Anzeige historisch" type="bool" value="false" inputs="value:1153.out0" />
+    <Constant uid="1155" uid_parent="1001" type="int32" value="9" outputs="value:1155.value" />
+    <Node uid="1156" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1155.value" outputs="element:1156.out0" />
+    <Constant uid="1157" uid_parent="1001" type="string" value="Parameter ungueltig - Eingaben pruefen." outputs="value:1157.value" />
+    <Constant uid="1158" uid_parent="1001" type="double" value="0" outputs="value:1158.value" />
+    <Node uid="1159" uid_parent="1001" _name="Equal?" inputs="x:1156.out0,y:1158.value" outputs="x = y?:1159.out0" />
+    <Constant uid="1160" uid_parent="1001" type="string" value="Messsignal gueltig" outputs="value:1160.value" />
+    <Node uid="1161" uid_parent="1001" _name="Select" inputs="t:1160.value,s:1159.out0,f:1157.value" outputs="s? t\3Af:1161.out0" />
+    <Constant uid="1162" uid_parent="1001" type="double" value="1" outputs="value:1162.value" />
+    <Node uid="1163" uid_parent="1001" _name="Equal?" inputs="x:1156.out0,y:1162.value" outputs="x = y?:1163.out0" />
+    <Constant uid="1164" uid_parent="1001" type="string" value="Sensorabgleich fehlt" outputs="value:1164.value" />
+    <Node uid="1165" uid_parent="1001" _name="Select" inputs="t:1164.value,s:1163.out0,f:1161.out0" outputs="s? t\3Af:1165.out0" />
+    <Constant uid="1166" uid_parent="1001" type="double" value="2" outputs="value:1166.value" />
+    <Node uid="1167" uid_parent="1001" _name="Equal?" inputs="x:1156.out0,y:1166.value" outputs="x = y?:1167.out0" />
+    <Constant uid="1168" uid_parent="1001" type="string" value="Auswertung noch nicht abgeglichen" outputs="value:1168.value" />
+    <Node uid="1169" uid_parent="1001" _name="Select" inputs="t:1168.value,s:1167.out0,f:1165.out0" outputs="s? t\3Af:1169.out0" />
+    <Constant uid="1170" uid_parent="1001" type="double" value="3" outputs="value:1170.value" />
+    <Node uid="1171" uid_parent="1001" _name="Equal?" inputs="x:1156.out0,y:1170.value" outputs="x = y?:1171.out0" />
+    <Constant uid="1172" uid_parent="1001" type="string" value="Kein Echo" outputs="value:1172.value" />
+    <Node uid="1173" uid_parent="1001" _name="Select" inputs="t:1172.value,s:1171.out0,f:1169.out0" outputs="s? t\3Af:1173.out0" />
+    <Constant uid="1174" uid_parent="1001" type="double" value="4" outputs="value:1174.value" />
+    <Node uid="1175" uid_parent="1001" _name="Equal?" inputs="x:1156.out0,y:1174.value" outputs="x = y?:1175.out0" />
+    <Constant uid="1176" uid_parent="1001" type="string" value="Geraete ausgeschaltet" outputs="value:1176.value" />
+    <Node uid="1177" uid_parent="1001" _name="Select" inputs="t:1176.value,s:1175.out0,f:1173.out0" outputs="s? t\3Af:1177.out0" />
+    <Indicator uid="1178" uid_parent="1001" _name="Signalzustand" type="string" value="Mit Ausfuehren / Strg+R starten." inputs="value:1177.out0" />
+    <Constant uid="1179" uid_parent="1001" type="int32" value="10" outputs="value:1179.value" />
+    <Node uid="1180" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1179.value" outputs="element:1180.out0" />
+    <Indicator uid="1181" uid_parent="1001" _name="Abgleichfehler (0 / 1 / 2)" type="double" value="0" inputs="value:1180.out0" />
+    <Constant uid="1182" uid_parent="1001" type="int32" value="0" outputs="value:1182.value" />
+    <Node uid="1183" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1182.value" outputs="element:1183.out0" />
+    <Constant uid="1184" uid_parent="1001" type="int32" value="1" outputs="value:1184.value" />
+    <Node uid="1185" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1184.value" outputs="element:1185.out0" />
+    <Constant uid="1186" uid_parent="1001" type="int32" value="2" outputs="value:1186.value" />
+    <Node uid="1187" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1186.value" outputs="element:1187.out0" />
+    <Constant uid="1188" uid_parent="1001" type="int32" value="3" outputs="value:1188.value" />
+    <Node uid="1189" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1188.value" outputs="element:1189.out0" />
+    <Constant uid="1190" uid_parent="1001" type="int32" value="4" outputs="value:1190.value" />
+    <Node uid="1191" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1190.value" outputs="element:1191.out0" />
+    <Constant uid="1192" uid_parent="1001" type="int32" value="5" outputs="value:1192.value" />
+    <Node uid="1193" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1192.value" outputs="element:1193.out0" />
+    <Constant uid="1194" uid_parent="1001" type="int32" value="6" outputs="value:1194.value" />
+    <Node uid="1195" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1194.value" outputs="element:1195.out0" />
+    <Constant uid="1196" uid_parent="1001" type="int32" value="8" outputs="value:1196.value" />
+    <Node uid="1197" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1196.value" outputs="element:1197.out0" />
+    <Constant uid="1198" uid_parent="1001" type="int32" value="9" outputs="value:1198.value" />
+    <Node uid="1199" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1198.value" outputs="element:1199.out0" />
+    <Constant uid="1200" uid_parent="1001" type="int32" value="10" outputs="value:1200.value" />
+    <Node uid="1201" uid_parent="1001" _name="Index Array" inputs="array:1120.out1,index:1200.value" outputs="element:1201.out0" />
+    <Control uid="1202" uid_parent="1001" _name="Aufnahme eingeschaltet" type="bool" value="false" outputs="value:1202.value" />
+    <Control uid="1203" uid_parent="1001" _name="Neue Aufnahme" type="bool" value="false" outputs="value:1203.value" />
+    <Structure uid="1204" uid_parent="1001" _name="Case Structure" selectin="1203.value">
+      <CaseFrame uid="1205" uid_parent="1204" selector="True" selectout="">
+        <Constant uid="1206" uid_parent="1205" type="bool" value="false" outputs="value:1206.value" />
+        <Node uid="1207" uid_parent="1205" _name="Property Node" fields="write+Value" type="{LV.Boolean}" link="Neue Aufnahme" inputs="Value:1206.value" outputs="error out:1207.out0" />
+      </CaseFrame>
+      <CaseFrame uid="1208" uid_parent="1204" selector="False" selectout="" />
+    </Structure>
+    <Control uid="1209" uid_parent="1001" _name="Ungespeicherte Aufnahme verwerfen erlauben" type="bool" value="false" outputs="value:1209.value" />
+    <Control uid="1210" uid_parent="1001" _name="CSV speichern" type="bool" value="false" outputs="value:1210.value" />
+    <Structure uid="1211" uid_parent="1001" _name="Case Structure" selectin="1210.value">
+      <CaseFrame uid="1212" uid_parent="1211" selector="True" selectout="">
+        <Constant uid="1213" uid_parent="1212" type="bool" value="false" outputs="value:1213.value" />
+        <Node uid="1214" uid_parent="1212" _name="Property Node" fields="write+Value" type="{LV.Boolean}" link="CSV speichern" inputs="Value:1213.value" outputs="error out:1214.out0" />
+      </CaseFrame>
+      <CaseFrame uid="1215" uid_parent="1211" selector="False" selectout="" />
+    </Structure>
+    <Control uid="1216" uid_parent="1001" _name="Neue CSV-Datei" type="path" value="" outputs="value:1216.value" />
+    <Control uid="1217" uid_parent="1001" _name="Pruefstand beenden" type="bool" value="false" outputs="value:1217.value" />
+    <Structure uid="1218" uid_parent="1001" _name="Case Structure" selectin="1217.value">
+      <CaseFrame uid="1219" uid_parent="1218" selector="True" selectout="">
+        <Constant uid="1220" uid_parent="1219" type="bool" value="false" outputs="value:1220.value" />
+        <Node uid="1221" uid_parent="1219" _name="Property Node" fields="write+Value" type="{LV.Boolean}" link="Pruefstand beenden" inputs="Value:1220.value" outputs="error out:1221.out0" />
+      </CaseFrame>
+      <CaseFrame uid="1222" uid_parent="1218" selector="False" selectout="" />
+    </Structure>
+    <ShiftReg uid="1224" uid_parent="1001">
+      <Left uid="1225" uid_parent="1224" inputs="value:1223.value" outputs="value:1225.value" />
+      <Right uid="1226" uid_parent="1224" inputs="value:1287.out0" outputs="value:" />
+    </ShiftReg>
+    <ShiftReg uid="1228" uid_parent="1001">
+      <Left uid="1229" uid_parent="1228" inputs="value:1227.value" outputs="value:1229.value" />
+      <Right uid="1230" uid_parent="1228" inputs="value:1319.out0" outputs="value:" />
+    </ShiftReg>
+    <Node uid="1231" uid_parent="1001" _name="Unbundle By Name" fields="text,count" inputs="input cluster:1225.value" outputs="text:1231.out0,count:1231.out1" />
+    <Node uid="1232" uid_parent="1001" _name="Greater?" inputs="x:1231.out1,y:1229.value" outputs="x &gt; y?:1232.out0" />
+    <Node uid="1233" uid_parent="1001" _name="Not" inputs="x:1232.out0" outputs=".not. x?:1233.out0" />
+    <Node uid="1234" uid_parent="1001" _name="Or" inputs="x:1233.out0,y:1209.value" outputs="x .or. y?:1234.out0" />
+    <Node uid="1235" uid_parent="1001" _name="And" inputs="x:1203.value,y:1234.out0" outputs="x .and. y?:1235.out0" />
+    <Constant uid="1236" uid_parent="1001" type="int32" value="5" outputs="value:1236.value" />
+    <Node uid="1237" uid_parent="1001" _name="Quotient &amp; Remainder" inputs="x:1001.i,y:1236.value" outputs="x-y*floor(x/y):1237.out0" />
+    <Node uid="1238" uid_parent="1001" _name="Equal?" inputs="x:1237.out0,y:1003.value" outputs="x = y?:1238.out0" />
+    <Node uid="1239" uid_parent="1001" _name="And" inputs="x:1202.value,y:1121.value" outputs="x .and. y?:1239.out0" />
+    <Node uid="1240" uid_parent="1001" _name="And" inputs="x:1239.out0,y:1238.out0" outputs="x .and. y?:1240.out0" />
+    <Constant uid="1241" uid_parent="1001" type="int32" value="10000" outputs="value:1241.value" />
+    <Constant uid="1242" uid_parent="1001" type="string" value="Quelle;Zeit_s;Fuellhoehe_m;Distanz_m;Sensor_pct;Sensor_linear_pct;Strom_mA;Auswertung_pct;Auswertung_linear_pct;Skalenwert;Relais2;Qualitaet;Parameterfehler;Eingang_dt_s;Eingang_sensor_plane_above_bottom_m_example;Eingang_fill_height_m;Eingang_echo;Eingang_power;Eingang_offset_m_example;Eingang_damping_s;Eingang_sensor_distance_at_0pct_m;Eingang_sensor_distance_at_100pct_m;Eingang_sensor_linearization_0_linear_1_horizontal_cylinder;Eingang_sensor_apply_pressed;Eingang_controller_current_at_0pct_mA;Eingang_controller_current_at_100pct_mA;Eingang_controller_linearization_0_linear_1_horizontal_cylinder;Eingang_scaled_0pct;Eingang_scaled_100pct;Eingang_relay_lower_pct;Eingang_relay_upper_pct;Eingang_relay_mode_0_off_1_window_on_2_window_off;Eingang_controller_apply_pressed\0D\0A" outputs="value:1242.value" />
+    <Constant uid="1243" uid_parent="1001" type="string" value="AT1B_Radar;" outputs="value:1243.value" />
+    <Constant uid="1244" uid_parent="1001" type="cluster{bool.record,bool.clear,int32.limit,string.header,string.source}" value="[false,false,10000,,]" outputs="value:1244.value" />
+    <Node uid="1245" uid_parent="1001" _name="Bundle By Name" fields="record,clear,limit,header,source" inputs="input cluster:1244.value,record:1240.out0,clear:1235.out0,limit:1241.value,header:1242.value,source:1243.value" outputs="output cluster:1245.out0" />
+    <Constant uid="1246" uid_parent="1001" type="int32" value="0" outputs="value:1246.value" />
+    <Node uid="1247" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1246.value" outputs="element:1247.out0" />
+    <Constant uid="1248" uid_parent="1001" type="int32" value="1" outputs="value:1248.value" />
+    <Node uid="1249" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1248.value" outputs="element:1249.out0" />
+    <Constant uid="1250" uid_parent="1001" type="int32" value="2" outputs="value:1250.value" />
+    <Node uid="1251" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1250.value" outputs="element:1251.out0" />
+    <Constant uid="1252" uid_parent="1001" type="int32" value="3" outputs="value:1252.value" />
+    <Node uid="1253" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1252.value" outputs="element:1253.out0" />
+    <Constant uid="1254" uid_parent="1001" type="int32" value="4" outputs="value:1254.value" />
+    <Node uid="1255" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1254.value" outputs="element:1255.out0" />
+    <Constant uid="1256" uid_parent="1001" type="int32" value="5" outputs="value:1256.value" />
+    <Node uid="1257" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1256.value" outputs="element:1257.out0" />
+    <Constant uid="1258" uid_parent="1001" type="int32" value="6" outputs="value:1258.value" />
+    <Node uid="1259" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1258.value" outputs="element:1259.out0" />
+    <Constant uid="1260" uid_parent="1001" type="int32" value="7" outputs="value:1260.value" />
+    <Node uid="1261" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1260.value" outputs="element:1261.out0" />
+    <Constant uid="1262" uid_parent="1001" type="int32" value="8" outputs="value:1262.value" />
+    <Node uid="1263" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1262.value" outputs="element:1263.out0" />
+    <Constant uid="1264" uid_parent="1001" type="int32" value="9" outputs="value:1264.value" />
+    <Node uid="1265" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1264.value" outputs="element:1265.out0" />
+    <Constant uid="1266" uid_parent="1001" type="int32" value="10" outputs="value:1266.value" />
+    <Node uid="1267" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1266.value" outputs="element:1267.out0" />
+    <Constant uid="1268" uid_parent="1001" type="int32" value="11" outputs="value:1268.value" />
+    <Node uid="1269" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1268.value" outputs="element:1269.out0" />
+    <Constant uid="1270" uid_parent="1001" type="int32" value="12" outputs="value:1270.value" />
+    <Node uid="1271" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1270.value" outputs="element:1271.out0" />
+    <Constant uid="1272" uid_parent="1001" type="int32" value="13" outputs="value:1272.value" />
+    <Node uid="1273" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1272.value" outputs="element:1273.out0" />
+    <Constant uid="1274" uid_parent="1001" type="int32" value="14" outputs="value:1274.value" />
+    <Node uid="1275" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1274.value" outputs="element:1275.out0" />
+    <Constant uid="1276" uid_parent="1001" type="int32" value="15" outputs="value:1276.value" />
+    <Node uid="1277" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1276.value" outputs="element:1277.out0" />
+    <Constant uid="1278" uid_parent="1001" type="int32" value="16" outputs="value:1278.value" />
+    <Node uid="1279" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1278.value" outputs="element:1279.out0" />
+    <Constant uid="1280" uid_parent="1001" type="int32" value="17" outputs="value:1280.value" />
+    <Node uid="1281" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1280.value" outputs="element:1281.out0" />
+    <Constant uid="1282" uid_parent="1001" type="int32" value="18" outputs="value:1282.value" />
+    <Node uid="1283" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1282.value" outputs="element:1283.out0" />
+    <Constant uid="1284" uid_parent="1001" type="int32" value="19" outputs="value:1284.value" />
+    <Node uid="1285" uid_parent="1001" _name="Index Array" inputs="array:1119.out0,index:1284.value" outputs="element:1285.out0" />
+    <Node uid="1286" uid_parent="1001" _name="Build Array" inputs="element:1061.out0,element:1059.out0,element:1183.out0,element:1185.out0,element:1187.out0,element:1189.out0,element:1191.out0,element:1193.out0,element:1195.out0,element:1197.out0,element:1199.out0,element:1201.out0,element:1247.out0,element:1249.out0,element:1251.out0,element:1253.out0,element:1255.out0,element:1257.out0,element:1259.out0,element:1261.out0,element:1263.out0,element:1265.out0,element:1267.out0,element:1269.out0,element:1271.out0,element:1273.out0,element:1275.out0,element:1277.out0,element:1279.out0,element:1281.out0,element:1283.out0,element:1285.out0" outputs="appended array:1286.out0" />
+    <Call uid="1287" uid_parent="1001" target="Aufzeichnung_Schritt.vi" inputs="Settings:1245.out0,Row:1286.out0,Previous:1225.value" outputs="Current:1287.out0,Full:1287.out1" />
+    <Node uid="1288" uid_parent="1001" _name="Unbundle By Name" fields="text,count" inputs="input cluster:1287.out0" outputs="text:1288.out0,count:1288.out1" />
+    <ShiftReg uid="1290" uid_parent="1001">
+      <Left uid="1291" uid_parent="1290" inputs="value:1289.value" outputs="value:1291.value" />
+      <Right uid="1292" uid_parent="1290" inputs="value:1313.value" outputs="value:" />
+    </ShiftReg>
+    <Constant uid="1293" uid_parent="1001" type="double" value="0" outputs="value:1293.value" />
+    <Node uid="1294" uid_parent="1001" _name="Greater?" inputs="x:1288.out1,y:1293.value" outputs="x &gt; y?:1294.out0" />
+    <Node uid="1295" uid_parent="1001" _name="And" inputs="x:1210.value,y:1294.out0" outputs="x .and. y?:1295.out0" />
+    <Constant uid="1296" uid_parent="1001" type="cluster{bool.status,int32.code,string.source}" value="[false,0,]" outputs="value:1296.value" />
+    <Node uid="1297" uid_parent="1001" _name="Select" inputs="t:1296.value,s:1235.out0,f:1291.value" outputs="s? t\3Af:1297.out0" />
+    <Structure uid="1298" uid_parent="1001" _name="Case Structure" selectin="1295.out0">
+      <Tunnel uid="1299" uid_parent="1298" _id="InPath" inputs="value:1216.value" />
+      <Tunnel uid="1300" uid_parent="1298" _id="InText" inputs="value:1288.out0" />
+      <Tunnel uid="1301" uid_parent="1298" _id="InError" inputs="value:1297.out0" />
+      <CaseFrame uid="1302" uid_parent="1298" selector="True" selectout="">
+        <Tunnel uid="1303" uid_parent="1302" _id="InPath" outputs="value:1303.value" />
+        <Tunnel uid="1304" uid_parent="1302" _id="InText" outputs="value:1304.value" />
+        <Tunnel uid="1305" uid_parent="1302" _id="InError" outputs="value:1305.value" />
+        <Call uid="1306" uid_parent="1302" target="CSV_Speichern.vi" inputs="Datei:1303.value,Text:1304.value" outputs="error out:1306.out0" />
+        <Tunnel uid="1307" uid_parent="1302" _id="OutError" inputs="value:1306.out0" />
+      </CaseFrame>
+      <CaseFrame uid="1308" uid_parent="1298" selector="False" selectout="">
+        <Tunnel uid="1309" uid_parent="1308" _id="InPath" outputs="value:1309.value" />
+        <Tunnel uid="1310" uid_parent="1308" _id="InText" outputs="value:1310.value" />
+        <Tunnel uid="1311" uid_parent="1308" _id="InError" outputs="value:1311.value" />
+        <Tunnel uid="1312" uid_parent="1308" _id="OutError" inputs="value:1311.value" />
+      </CaseFrame>
+      <Tunnel uid="1313" uid_parent="1298" _id="OutError" outputs="value:1313.value" />
+    </Structure>
+    <Node uid="1314" uid_parent="1001" _name="Unbundle By Name" fields="status,code,source" inputs="input cluster:1313.value" outputs="status:1314.out0,code:1314.out1,source:1314.out2" />
+    <Node uid="1315" uid_parent="1001" _name="Not" inputs="x:1314.out0" outputs=".not. x?:1315.out0" />
+    <Node uid="1316" uid_parent="1001" _name="And" inputs="x:1295.out0,y:1315.out0" outputs="x .and. y?:1316.out0" />
+    <Constant uid="1317" uid_parent="1001" type="int32" value="0" outputs="value:1317.value" />
+    <Node uid="1318" uid_parent="1001" _name="Select" inputs="t:1317.value,s:1235.out0,f:1229.value" outputs="s? t\3Af:1318.out0" />
+    <Node uid="1319" uid_parent="1001" _name="Select" inputs="t:1288.out1,s:1316.out0,f:1318.out0" outputs="s? t\3Af:1319.out0" />
+    <Node uid="1320" uid_parent="1001" _name="Greater?" inputs="x:1288.out1,y:1319.out0" outputs="x &gt; y?:1320.out0" />
+    <Node uid="1321" uid_parent="1001" _name="Not" inputs="x:1320.out0" outputs=".not. x?:1321.out0" />
+    <Node uid="1322" uid_parent="1001" _name="Or" inputs="x:1321.out0,y:1209.value" outputs="x .or. y?:1322.out0" />
+    <Node uid="1323" uid_parent="1001" _name="And" inputs="x:1217.value,y:1322.out0" outputs="x .and. y?:1323.out0" />
+    <Condition uid="1324" uid_parent="1001" inputs="value:1323.out0" value="stop" />
+    <Node uid="1325" uid_parent="1001" _name="Not" inputs="x:1234.out0" outputs=".not. x?:1325.out0" />
+    <Node uid="1326" uid_parent="1001" _name="And" inputs="x:1203.value,y:1325.out0" outputs="x .and. y?:1326.out0" />
+    <Node uid="1327" uid_parent="1001" _name="Not" inputs="x:1323.out0" outputs=".not. x?:1327.out0" />
+    <Node uid="1328" uid_parent="1001" _name="And" inputs="x:1217.value,y:1327.out0" outputs="x .and. y?:1328.out0" />
+    <Node uid="1329" uid_parent="1001" _name="Or" inputs="x:1326.out0,y:1328.out0" outputs="x .or. y?:1329.out0" />
+    <Constant uid="1330" uid_parent="1001" type="string" value="Aufnahme noch nicht gespeichert. Vor neuer Aufnahme oder Beenden CSV speichern oder Verwerfen erlauben einschalten." outputs="value:1330.value" />
+    <Constant uid="1331" uid_parent="1001" type="string" value="Bereit. Aufnahme mit neuem Dateinamen speichern." outputs="value:1331.value" />
+    <Node uid="1332" uid_parent="1001" _name="Select" inputs="t:1330.value,s:1320.out0,f:1331.value" outputs="s? t\3Af:1332.out0" />
+    <Constant uid="1333" uid_parent="1001" type="string" value="Aufnahme voll (10 000 Zeilen). Speichern und neue Aufnahme beginnen." outputs="value:1333.value" />
+    <Node uid="1334" uid_parent="1001" _name="Select" inputs="t:1333.value,s:1287.out1,f:1332.out0" outputs="s? t\3Af:1334.out0" />
+    <Constant uid="1335" uid_parent="1001" type="string" value="Erst CSV speichern oder Verwerfen erlauben einschalten." outputs="value:1335.value" />
+    <Node uid="1336" uid_parent="1001" _name="Select" inputs="t:1335.value,s:1329.out0,f:1334.out0" outputs="s? t\3Af:1336.out0" />
+    <Node uid="1337" uid_parent="1001" _name="Select" inputs="t:1314.out2,s:1314.out0,f:1336.out0" outputs="s? t\3Af:1337.out0" />
+    <Indicator uid="1338" uid_parent="1001" _name="Aufnahmestatus" type="string" value="" inputs="value:1337.out0" />
+    <Indicator uid="1339" uid_parent="1001" _name="Zeilen aufgenommen" type="int32" value="0" inputs="value:1288.out1" />
+    <Indicator uid="1340" uid_parent="1001" _name="Ungespeicherte Daten" type="bool" value="false" inputs="value:1320.out0" />
+    <Indicator uid="1341" uid_parent="1001" _name="CSV-Fehlercode" type="int32" value="0" inputs="value:1314.out1" />
+    <Constant uid="1342" uid_parent="1001" type="int32" value="3" outputs="value:1342.value" />
+    <Node uid="1343" uid_parent="1001" _name="Index Array" inputs="array:1126.out0,index:1342.value" outputs="element:1343.out0" />
+    <Indicator uid="1344" uid_parent="1001" _name="Stromverlauf [mA] - 20 ms je Punkt" type="double" value="0" inputs="value:1343.out0" style="graph21717" />
+    <Constant uid="1345" uid_parent="1001" type="cluster{int32.Left,int32.Top}" value="[735,420]" outputs="value:1345.value" />
+    <Constant uid="1346" uid_parent="1001" type="cluster{uint32.Width,uint32.Height}" value="[340,110]" outputs="value:1346.value" />
+    <Node uid="1347" uid_parent="1001" _name="Property Node" fields="write+Legend\3AVisible,write+Palette\3AVisible,write+Scale Legend\3AVisible,write+Position,write+Plot Area\3ASize" type="{LV.WaveformChart}" link="Stromverlauf [mA] - 20 ms je Punkt" inputs="Legend\3AVisible:1005.value,Palette\3AVisible:1005.value,Scale Legend\3AVisible:1005.value,Position:1345.value,Plot Area\3ASize:1346.value" outputs="error out:1347.out0" />
+    <Node uid="1348" uid_parent="1001" _name="Unbundle By Name" fields="code" inputs="input cluster:1347.out0" outputs="code:1348.out0" />
+    <Indicator uid="1349" uid_parent="1001" _name="Grafikfehlercode" type="int32" value="0" inputs="value:1348.out0" />
+    <Indicator uid="1350" uid_parent="1001" _name="Bewegungsparameter gueltig" type="bool" value="true" inputs="value:1065.out0" />
+  </Structure>
+  <Constant uid="1040" uid_parent="root" type="array{double}" value="[0,0,0,0,0,0,0,0,0,0,0,0]" outputs="value:1040.value" />
+  <Constant uid="1115" uid_parent="root" type="array{double}" value="[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]" outputs="value:1115.value" />
+  <Constant uid="1122" uid_parent="root" type="array{double}" value="[NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN]" outputs="value:1122.value" />
+  <Constant uid="1223" uid_parent="root" type="cluster{string.text,int32.count}" value="[Quelle;Zeit_s;Fuellhoehe_m;Distanz_m;Sensor_pct;Sensor_linear_pct;Strom_mA;Auswertung_pct;Auswertung_linear_pct;Skalenwert;Relais2;Qualitaet;Parameterfehler;Eingang_dt_s;Eingang_sensor_plane_above_bottom_m_example;Eingang_fill_height_m;Eingang_echo;Eingang_power;Eingang_offset_m_example;Eingang_damping_s;Eingang_sensor_distance_at_0pct_m;Eingang_sensor_distance_at_100pct_m;Eingang_sensor_linearization_0_linear_1_horizontal_cylinder;Eingang_sensor_apply_pressed;Eingang_controller_current_at_0pct_mA;Eingang_controller_current_at_100pct_mA;Eingang_controller_linearization_0_linear_1_horizontal_cylinder;Eingang_scaled_0pct;Eingang_scaled_100pct;Eingang_relay_lower_pct;Eingang_relay_upper_pct;Eingang_relay_mode_0_off_1_window_on_2_window_off;Eingang_controller_apply_pressed\0D\0A,0]" outputs="value:1223.value" />
+  <Constant uid="1227" uid_parent="root" type="int32" value="0" outputs="value:1227.value" />
+  <Constant uid="1289" uid_parent="root" type="cluster{bool.status,int32.code,string.source}" value="[false,0,]" outputs="value:1289.value" />
+</VI>

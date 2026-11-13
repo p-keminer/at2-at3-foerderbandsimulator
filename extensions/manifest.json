@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    {
+      "file": "extensions/AT1B/PACTware/AT1B_Radar_Offline.PW6",
+      "bytes": 423936,
+      "sha256": "2e36af2663811dc02968595afaa4c97b0b84c380931c6d76695391f83dc214f2"
+    },
+    {
+      "file": "extensions/AT1B/Pruefstand/AT1B_Naeherung.vi",
+      "bytes": 37286,
+      "sha256": "c95d1a53c720075f4aeec13d2e1b285644e00613c8cf387ff1850f5fd24d07a1"
+    },
+    {
+      "file": "extensions/AT1B/Pruefstand/AT1B_Radar.vi",
+      "bytes": 41938,
+      "sha256": "96747fc7d316757ab9eae7a0d15ed2afc856eee4773a92ab628979a162213aec"
+    },
+    {
+      "file": "extensions/AT1B/Pruefstand/AT1B_Ultraschall.vi",
+      "bytes": 38736,
+      "sha256": "36fdf3dd79ed9d8f567320abb2710eba0c22216b23ae7011165f37016e2bf182"
+    },
+    {
+      "file": "extensions/AT1B/Pruefstand/Modelle/AU004_Schritt.vi",
+      "bytes": 6941,
+      "sha256": "0797c6eaa1a173f4ec5ea4104b03052831e0d6606df5ebee57d0715253eb739a"
+    },
+    {
+      "file": "extensions/AT1B/Pruefstand/Modelle/Naeherung_Schritt.vi",
+      "bytes": 6525,
+      "sha256": "7dc20604acc05816d873e98452c1621cdeec59babca73a6d38dfddbbdd3d842b"
+    },
+    {
+      "file": "extensions/AT1B/Pruefstand/Modelle/Radar_Schritt.vi",
+      "bytes": 6777,
+      "sha256": "23ddc50b2726dc6987417c003a3a2e2141888fa90c1d29f536512277371a66f6"
+    },
+    {
+      "file": "extensions/AT1B/Pruefstand/Modelle/Trajektorie.vi",
+      "bytes": 6471,
+      "sha256": "37367d328126cf2ad6f836dc4c7d01cfaa6f1980e9acfde5f9006ff8bd7c6311"
+    },
+    {
+      "file": "extensions/AT1B/Pruefstand/SubVIs/Aufzeichnung_Schritt.vi",
+      "bytes": 8200,
+      "sha256": "e7152c7d73f4a2fbb22744c3882514a60d7d36bdcc1a13128dc1a52344d4dc76"
+    },
+    {
+      "file": "extensions/AT1B/Pruefstand/SubVIs/CSV_Speichern.vi",
+      "bytes": 6949,
+      "sha256": "88c70d9742accbaec195d7cd5d6d11aaa79fa8683ef0229d5811c8f62de8cd99"
+    }
+  ],
+  "labview": {
+    "version": "2026 Q3",
+    "testedBitness": 32,
+    "testedVersion": "26.3.1f1",
+    "projectReferences": "relative"
+  },
+  "pactware": {
+    "version": "6.2.0020",
+    "vegaDtm": "2.6.2.2",
+    "offlineProjectOnly": true,
+    "labviewCoupling": false
+  },
+  "verification": {
+    "modelCases": {
+      "date": "2026-11-09",
+      "passed": 28
+    },
+    "recordingCases": {
+      "date": "2026-11-09",
+      "passed": 10
+    },
+    "frontPanelCases": {
+      "date": "2026-11-13",
+      "passed": 10
+    },
+    "exerciseCases": {
+      "date": "2026-11-13",
+      "passed": 5
+    },
+    "singleMouseClickQuitAndNativeIdle": true,
+    "pnHmiToPlcValues": [
+      55,
+      12.5
+    ],
+    "plcToPnHmiValues": [
+      7.75,
+      -2.25
+    ],
+    "dpValueTransferVerified": false,
+    "negativeHmiInputVerified": false,
+    "repeatedCpuStartReliable": false
+  },
+  "technicalArchive": {
+    "nativeArchiveRetrievalVerifiedBeforeLogRemoval": true,
+    "nativeProjectMembersUnchanged": true,
+    "removedDownloadLogs": 11,
+    "afterLogRemovalZipCrcVerified": true,
+    "nativeRetrievalAfterLogRemovalRepeated": false
+  }
+}

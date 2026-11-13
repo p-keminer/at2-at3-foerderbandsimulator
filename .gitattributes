@@ -8,5 +8,9 @@
 *.ps1 text eol=crlf
 *.cmd text eol=crlf
 *.png binary
+*.vi binary
+*.PW6 binary
+*.zap18 binary
+*.zip binary
 # Preserve the upstream Microsoft installer byte-for-byte, including its formatting.
 tools/dotnet-install.ps1 -text -whitespace

@@ -1,0 +1,609 @@
+{
+  "name": "AT1B_Radar",
+  "title": "AT-1B / VEGAPULS C22 und VEGAMET 391 - Fuellhoehe in m",
+  "description": "Virtuelle 4-20-mA-Kette mit eigenem Trend; keine HART- oder DTM-Verbindung. Sensor und Auswertung getrennt abgleichen. Weitere Einstellungen unterhalb der Aufnahme.\nGeometrie und liegender Zylinder sind Beispiele.",
+  "controls": [
+    {
+      "name": "Pruefstand",
+      "position": [
+        28,
+        16,
+        1137,
+        40
+      ],
+      "uid": "1007"
+    },
+    {
+      "name": "Kurzhilfe",
+      "position": [
+        28,
+        68,
+        1137,
+        52
+      ],
+      "uid": "1009"
+    },
+    {
+      "name": "Handposition",
+      "position": [
+        28,
+        125,
+        180,
+        44
+      ],
+      "uid": "1013"
+    },
+    {
+      "name": "Position setzen",
+      "position": [
+        233,
+        125,
+        180,
+        44
+      ],
+      "uid": "1014"
+    },
+    {
+      "name": "Startposition",
+      "position": [
+        28,
+        183,
+        180,
+        44
+      ],
+      "uid": "1020"
+    },
+    {
+      "name": "Endposition",
+      "position": [
+        233,
+        183,
+        180,
+        44
+      ],
+      "uid": "1021"
+    },
+    {
+      "name": "Tempo pro Sekunde",
+      "position": [
+        28,
+        241,
+        180,
+        44
+      ],
+      "uid": "1022"
+    },
+    {
+      "name": "Haltezeit [s]",
+      "position": [
+        233,
+        241,
+        180,
+        44
+      ],
+      "uid": "1023"
+    },
+    {
+      "name": "Wiederholungen",
+      "position": [
+        28,
+        299,
+        180,
+        44
+      ],
+      "uid": "1024"
+    },
+    {
+      "name": "Fahrtart",
+      "position": [
+        233,
+        299,
+        180,
+        44
+      ],
+      "uid": "1025"
+    },
+    {
+      "name": "Schrittweite",
+      "position": [
+        28,
+        357,
+        180,
+        44
+      ],
+      "uid": "1026"
+    },
+    {
+      "name": "Ablauf starten",
+      "position": [
+        233,
+        357,
+        180,
+        44
+      ],
+      "uid": "1027"
+    },
+    {
+      "name": "Bewegung stoppen",
+      "position": [
+        28,
+        415,
+        180,
+        44
+      ],
+      "uid": "1033"
+    },
+    {
+      "name": "Bewegung pausieren",
+      "position": [
+        233,
+        415,
+        180,
+        44
+      ],
+      "uid": "1039"
+    },
+    {
+      "name": "Position aktuell",
+      "position": [
+        28,
+        473,
+        180,
+        44
+      ],
+      "uid": "1070"
+    },
+    {
+      "name": "Fahrt aktiv",
+      "position": [
+        233,
+        473,
+        180,
+        44
+      ],
+      "uid": "1071"
+    },
+    {
+      "name": "Abgeschlossene Fahrten",
+      "position": [
+        28,
+        531,
+        180,
+        44
+      ],
+      "uid": "1074"
+    },
+    {
+      "name": "Geraete eingeschaltet",
+      "position": [
+        455,
+        125,
+        220,
+        44
+      ],
+      "uid": "1075"
+    },
+    {
+      "name": "Echo vorhanden",
+      "position": [
+        455,
+        183,
+        220,
+        44
+      ],
+      "uid": "1076"
+    },
+    {
+      "name": "Sensorhoehe ueber Boden [m] - Beispiel",
+      "position": [
+        455,
+        241,
+        220,
+        44
+      ],
+      "uid": "1077"
+    },
+    {
+      "name": "Messoffset [m] - Beispiel",
+      "position": [
+        455,
+        299,
+        220,
+        44
+      ],
+      "uid": "1078"
+    },
+    {
+      "name": "Daempfung [s]",
+      "position": [
+        455,
+        357,
+        220,
+        44
+      ],
+      "uid": "1079"
+    },
+    {
+      "name": "Sensordistanz bei 0 % [m]",
+      "position": [
+        455,
+        415,
+        220,
+        44
+      ],
+      "uid": "1080"
+    },
+    {
+      "name": "Sensordistanz bei 100 % [m]",
+      "position": [
+        455,
+        473,
+        220,
+        44
+      ],
+      "uid": "1081"
+    },
+    {
+      "name": "Sensor-Linearisierung",
+      "position": [
+        28,
+        935,
+        340,
+        44
+      ],
+      "uid": "1082"
+    },
+    {
+      "name": "Sensorabgleich uebernehmen",
+      "position": [
+        403,
+        935,
+        340,
+        44
+      ],
+      "uid": "1083"
+    },
+    {
+      "name": "Auswertung Strom bei 0 % [mA]",
+      "position": [
+        778,
+        935,
+        340,
+        44
+      ],
+      "uid": "1089"
+    },
+    {
+      "name": "Auswertung Strom bei 100 % [mA]",
+      "position": [
+        28,
+        999,
+        340,
+        44
+      ],
+      "uid": "1090"
+    },
+    {
+      "name": "Auswertung Linearisierung",
+      "position": [
+        403,
+        999,
+        340,
+        44
+      ],
+      "uid": "1091"
+    },
+    {
+      "name": "Skalenwert bei 0 %",
+      "position": [
+        778,
+        999,
+        340,
+        44
+      ],
+      "uid": "1092"
+    },
+    {
+      "name": "Skalenwert bei 100 %",
+      "position": [
+        28,
+        1063,
+        340,
+        44
+      ],
+      "uid": "1093"
+    },
+    {
+      "name": "Relais 2 Untergrenze [%]",
+      "position": [
+        403,
+        1063,
+        340,
+        44
+      ],
+      "uid": "1094"
+    },
+    {
+      "name": "Relais 2 Obergrenze [%]",
+      "position": [
+        778,
+        1063,
+        340,
+        44
+      ],
+      "uid": "1095"
+    },
+    {
+      "name": "Relais 2 Betriebsart",
+      "position": [
+        28,
+        1127,
+        340,
+        44
+      ],
+      "uid": "1096"
+    },
+    {
+      "name": "Auswertung uebernehmen",
+      "position": [
+        403,
+        1127,
+        340,
+        44
+      ],
+      "uid": "1097"
+    },
+    {
+      "name": "Messung eingeschaltet",
+      "position": [
+        28,
+        610,
+        185,
+        44
+      ],
+      "uid": "1121"
+    },
+    {
+      "name": "Distanz [m]",
+      "position": [
+        735,
+        125,
+        215,
+        44
+      ],
+      "uid": "1129"
+    },
+    {
+      "name": "Sensor [%]",
+      "position": [
+        975,
+        125,
+        215,
+        44
+      ],
+      "uid": "1132"
+    },
+    {
+      "name": "Sensor linearisiert [%]",
+      "position": [
+        735,
+        183,
+        215,
+        44
+      ],
+      "uid": "1135"
+    },
+    {
+      "name": "Strom [mA]",
+      "position": [
+        975,
+        183,
+        215,
+        44
+      ],
+      "uid": "1138"
+    },
+    {
+      "name": "Auswertung [%]",
+      "position": [
+        735,
+        241,
+        215,
+        44
+      ],
+      "uid": "1141"
+    },
+    {
+      "name": "Auswertung linearisiert [%]",
+      "position": [
+        975,
+        241,
+        215,
+        44
+      ],
+      "uid": "1144"
+    },
+    {
+      "name": "Skalenwert",
+      "position": [
+        735,
+        299,
+        215,
+        44
+      ],
+      "uid": "1147"
+    },
+    {
+      "name": "Relais 2",
+      "position": [
+        975,
+        299,
+        215,
+        44
+      ],
+      "uid": "1152"
+    },
+    {
+      "name": "Messung angehalten - Anzeige historisch",
+      "position": [
+        455,
+        578,
+        240,
+        40
+      ],
+      "uid": "1154"
+    },
+    {
+      "name": "Signalzustand",
+      "position": [
+        735,
+        358,
+        430,
+        48
+      ],
+      "uid": "1178"
+    },
+    {
+      "name": "Abgleichfehler (0 / 1 / 2)",
+      "position": [
+        455,
+        530,
+        220,
+        44
+      ],
+      "uid": "1181"
+    },
+    {
+      "name": "Aufnahme eingeschaltet",
+      "position": [
+        28,
+        668,
+        190,
+        44
+      ],
+      "uid": "1202"
+    },
+    {
+      "name": "Neue Aufnahme",
+      "position": [
+        233,
+        668,
+        180,
+        44
+      ],
+      "uid": "1203"
+    },
+    {
+      "name": "Ungespeicherte Aufnahme verwerfen erlauben",
+      "position": [
+        28,
+        724,
+        385,
+        44
+      ],
+      "uid": "1209"
+    },
+    {
+      "name": "CSV speichern",
+      "position": [
+        455,
+        724,
+        220,
+        44
+      ],
+      "uid": "1210"
+    },
+    {
+      "name": "Neue CSV-Datei",
+      "position": [
+        455,
+        668,
+        710,
+        44
+      ],
+      "uid": "1216"
+    },
+    {
+      "name": "Pruefstand beenden",
+      "position": [
+        28,
+        782,
+        185,
+        44
+      ],
+      "uid": "1217"
+    },
+    {
+      "name": "Aufnahmestatus",
+      "position": [
+        455,
+        782,
+        710,
+        65
+      ],
+      "uid": "1338"
+    },
+    {
+      "name": "Zeilen aufgenommen",
+      "position": [
+        735,
+        600,
+        215,
+        44
+      ],
+      "uid": "1339"
+    },
+    {
+      "name": "Ungespeicherte Daten",
+      "position": [
+        975,
+        600,
+        215,
+        44
+      ],
+      "uid": "1340"
+    },
+    {
+      "name": "CSV-Fehlercode",
+      "position": [
+        233,
+        782,
+        180,
+        44
+      ],
+      "uid": "1341"
+    },
+    {
+      "name": "Stromverlauf [mA] - 20 ms je Punkt",
+      "position": [
+        735,
+        420,
+        430,
+        165
+      ],
+      "uid": "1344"
+    },
+    {
+      "name": "Grafikfehlercode",
+      "position": [
+        28,
+        860,
+        180,
+        44
+      ],
+      "uid": "1349"
+    },
+    {
+      "name": "Bewegungsparameter gueltig",
+      "position": [
+        233,
+        610,
+        180,
+        44
+      ],
+      "uid": "1350"
+    }
+  ],
+  "width": 1210,
+  "height": 1250
+}

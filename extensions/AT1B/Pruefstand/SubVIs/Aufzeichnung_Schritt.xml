@@ -1,0 +1,26 @@
+<VI _name="Aufzeichnung_Schritt.vi" description="Append a raw sample only when requested. Bounded memory, source label on every row, no computed laboratory results.">
+  <Control uid="1001" uid_parent="root" _name="Settings" type="cluster{bool.record,bool.clear,int32.limit,string.header,string.source}" value="[false,false,10000,,]" conIdx="11" connection="required" outputs="value:1001.value" />
+  <Control uid="1002" uid_parent="root" _name="Row" type="array{double}" value="[0]" conIdx="10" connection="required" outputs="value:1002.value" />
+  <Control uid="1003" uid_parent="root" _name="Previous" type="cluster{string.text,int32.count}" value="[,0]" conIdx="9" connection="required" outputs="value:1003.value" />
+  <Node uid="1004" uid_parent="root" _name="Unbundle By Name" fields="record,clear,limit,header,source" inputs="input cluster:1001.value" outputs="record:1004.out0,clear:1004.out1,limit:1004.out2,header:1004.out3,source:1004.out4" />
+  <Node uid="1005" uid_parent="root" _name="Unbundle By Name" fields="text,count" inputs="input cluster:1003.value" outputs="text:1005.out0,count:1005.out1" />
+  <Constant uid="1006" uid_parent="root" type="int32" value="0" outputs="value:1006.value" />
+  <Constant uid="1007" uid_parent="root" type="int32" value="1" outputs="value:1007.value" />
+  <Node uid="1008" uid_parent="root" _name="Select" inputs="t:1004.out3,s:1004.out1,f:1005.out0" outputs="s? t\3Af:1008.out0" />
+  <Node uid="1009" uid_parent="root" _name="Select" inputs="t:1006.value,s:1004.out1,f:1005.out1" outputs="s? t\3Af:1009.out0" />
+  <Node uid="1010" uid_parent="root" _name="Less?" inputs="x:1009.out0,y:1004.out2" outputs="x &lt; y?:1010.out0" />
+  <Node uid="1011" uid_parent="root" _name="And" inputs="x:1010.out0,y:1004.out0" outputs="x .and. y?:1011.out0" />
+  <Constant uid="1012" uid_parent="root" type="string" value="%.;%.9g" outputs="value:1012.value" />
+  <Constant uid="1013" uid_parent="root" type="string" value=";" outputs="value:1013.value" />
+  <Node uid="1014" uid_parent="root" _name="Array To Spreadsheet String" inputs="format string:1012.value,array:1002.value,delimiter (Tab):1013.value" outputs="spreadsheet string:1014.out0" />
+  <Node uid="1015" uid_parent="root" _name="Concatenate Strings" inputs="string:1004.out4,string:1014.out0" outputs="concatenated string:1015.out0" />
+  <Node uid="1016" uid_parent="root" _name="Concatenate Strings" inputs="string:1008.out0,string:1015.out0" outputs="concatenated string:1016.out0" />
+  <Node uid="1017" uid_parent="root" _name="Add" inputs="x:1009.out0,y:1007.value" outputs="x+y:1017.out0" />
+  <Node uid="1018" uid_parent="root" _name="Select" inputs="t:1016.out0,s:1011.out0,f:1008.out0" outputs="s? t\3Af:1018.out0" />
+  <Node uid="1019" uid_parent="root" _name="Select" inputs="t:1017.out0,s:1011.out0,f:1009.out0" outputs="s? t\3Af:1019.out0" />
+  <Node uid="1020" uid_parent="root" _name="Bundle By Name" fields="text,count" inputs="input cluster:1003.value,text:1018.out0,count:1019.out0" outputs="output cluster:1020.out0" />
+  <Node uid="1021" uid_parent="root" _name="Less?" inputs="x:1019.out0,y:1004.out2" outputs="x &lt; y?:1021.out0" />
+  <Node uid="1022" uid_parent="root" _name="Not" inputs="x:1021.out0" outputs=".not. x?:1022.out0" />
+  <Indicator uid="1023" uid_parent="root" _name="Current" type="cluster{string.text,int32.count}" value="[,0]" inputs="value:1020.out0" conIdx="3" connection="recommended" />
+  <Indicator uid="1024" uid_parent="root" _name="Full" type="bool" value="false" inputs="value:1022.out0" conIdx="2" connection="recommended" />
+</VI>

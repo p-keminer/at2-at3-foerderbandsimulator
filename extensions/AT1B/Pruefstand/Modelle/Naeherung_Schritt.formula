@@ -1,0 +1,23 @@
+float64 factor,nominal,r,edge,shape,on,off,missing;
+int32 valid,mat;
+missing=sqrt(-1.0); mat=floor(p[3]);
+valid=(p[0]>=0 && p[0]<=100 && abs(p[1])<=100 && p[2]>0 && p[2]<=100 && p[5]>=10 && p[5]<=30 && p[6]>=0 && p[6]<=1 && p[8]>=0 && p[8]<=0.5 && p[9]>0 && p[9]<=50 && (p[7]==0 || p[7]==1) && p[12]>=-1 && p[12]<=2);
+factor=1;
+if(p[7]==0){
+  if(mat==1){factor=0.40;} if(mat==2){factor=0.42;} if(mat==3){factor=1.05;} if(mat==4){factor=0.50;} if(mat==5){factor=0.72;}
+  if(mat<0 || mat>5){valid=0;}
+} else {
+  if(mat==1){factor=0.48;} if(mat==2){factor=0.53;} if(mat==3){factor=0.69;} if(mat==4){factor=0.35;} if(mat==5){factor=0.98;} if(mat==6){factor=0.89;}
+  if(mat<0 || mat>6){valid=0;}
+}
+if(p[12]>=0){factor=p[12];}
+nominal=8*factor; if(p[2]<24){nominal=nominal*p[2]/24;} if(p[7]>0){nominal=nominal*(0.5+p[6]);}
+edge=abs(p[1])-p[2]/2; if(edge<0){edge=0;}
+shape=0; if(edge<p[9]){shape=sqrt(1-edge*edge/(p[9]*p[9]));}
+on=nominal*shape; off=on*(1+p[8]);
+if(p[10]>0 && s[3]==0){s[1]=p[0];} if(p[11]>0 && s[4]==0){s[2]=p[1];}
+s[3]=(p[10]>0); s[4]=(p[11]>0);
+if(valid && p[4]>0){if(shape>0 && p[0]<=on){s[0]=1;} if(shape==0 || p[0]>off){s[0]=0;}}
+else {s[0]=0;}
+y[0]=s[0]; y[1]=missing; y[2]=p[0]-s[1]; y[3]=p[1]-s[2]; y[4]=1; if(p[4]==0){y[4]=2;} if(valid==0){y[4]=0;}
+if(valid){y[1]=p[5]*s[0];} y[5]=on; y[6]=off;

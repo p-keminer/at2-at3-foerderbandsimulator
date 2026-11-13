@@ -24,6 +24,8 @@ foreach ($file in $required) { Copy-Item -LiteralPath (Join-Path $binaryRoot $fi
 # Built-in profiles travel with the application; personal profiles are not published.
 Copy-Item -LiteralPath (Join-Path $projectRoot 'config\profiles') -Destination (Join-Path $destinationPath 'config\profiles') -Recurse
 Copy-Item -LiteralPath (Join-Path $projectRoot 'tia') -Destination (Join-Path $destinationPath 'tia') -Recurse
+Copy-Item -LiteralPath (Join-Path $projectRoot 'extensions') -Destination (Join-Path $destinationPath 'extensions') -Recurse
+Copy-Item -LiteralPath (Join-Path $projectRoot 'Start_AT1B.cmd') -Destination $destinationPath
 foreach ($config in Get-ChildItem -LiteralPath (Join-Path $projectRoot 'config') -Filter '*.json' -File | Where-Object { $_.Name -notlike '*.local.json' }) {
     Copy-Item -LiteralPath $config.FullName -Destination (Join-Path $destinationPath ('config\'+$config.Name))
 }

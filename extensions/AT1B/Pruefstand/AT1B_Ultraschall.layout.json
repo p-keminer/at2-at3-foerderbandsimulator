@@ -1,0 +1,499 @@
+{
+  "name": "AT1B_Ultraschall",
+  "title": "AT-1B / Ultraschall AU004 - Wegwerte in mm",
+  "description": "Virtueller Sensor. Teach-Taste einschalten = halten, ausschalten = loslassen. Messgeraeteskala bleibt fest. Bewegung, Messung und Aufnahme sind getrennt schaltbar.\nModellgrenzen stehen in der Anleitung.",
+  "controls": [
+    {
+      "name": "Pruefstand",
+      "position": [
+        28,
+        16,
+        1137,
+        40
+      ],
+      "uid": "1007"
+    },
+    {
+      "name": "Kurzhilfe",
+      "position": [
+        28,
+        68,
+        1137,
+        52
+      ],
+      "uid": "1009"
+    },
+    {
+      "name": "Handposition",
+      "position": [
+        28,
+        125,
+        180,
+        44
+      ],
+      "uid": "1013"
+    },
+    {
+      "name": "Position setzen",
+      "position": [
+        233,
+        125,
+        180,
+        44
+      ],
+      "uid": "1014"
+    },
+    {
+      "name": "Startposition",
+      "position": [
+        28,
+        183,
+        180,
+        44
+      ],
+      "uid": "1020"
+    },
+    {
+      "name": "Endposition",
+      "position": [
+        233,
+        183,
+        180,
+        44
+      ],
+      "uid": "1021"
+    },
+    {
+      "name": "Tempo pro Sekunde",
+      "position": [
+        28,
+        241,
+        180,
+        44
+      ],
+      "uid": "1022"
+    },
+    {
+      "name": "Haltezeit [s]",
+      "position": [
+        233,
+        241,
+        180,
+        44
+      ],
+      "uid": "1023"
+    },
+    {
+      "name": "Wiederholungen",
+      "position": [
+        28,
+        299,
+        180,
+        44
+      ],
+      "uid": "1024"
+    },
+    {
+      "name": "Fahrtart",
+      "position": [
+        233,
+        299,
+        180,
+        44
+      ],
+      "uid": "1025"
+    },
+    {
+      "name": "Schrittweite",
+      "position": [
+        28,
+        357,
+        180,
+        44
+      ],
+      "uid": "1026"
+    },
+    {
+      "name": "Ablauf starten",
+      "position": [
+        233,
+        357,
+        180,
+        44
+      ],
+      "uid": "1027"
+    },
+    {
+      "name": "Bewegung stoppen",
+      "position": [
+        28,
+        415,
+        180,
+        44
+      ],
+      "uid": "1033"
+    },
+    {
+      "name": "Bewegung pausieren",
+      "position": [
+        233,
+        415,
+        180,
+        44
+      ],
+      "uid": "1039"
+    },
+    {
+      "name": "Position aktuell",
+      "position": [
+        28,
+        473,
+        180,
+        44
+      ],
+      "uid": "1070"
+    },
+    {
+      "name": "Fahrt aktiv",
+      "position": [
+        233,
+        473,
+        180,
+        44
+      ],
+      "uid": "1071"
+    },
+    {
+      "name": "Abgeschlossene Fahrten",
+      "position": [
+        28,
+        531,
+        180,
+        44
+      ],
+      "uid": "1074"
+    },
+    {
+      "name": "Sensor eingeschaltet",
+      "position": [
+        455,
+        125,
+        220,
+        44
+      ],
+      "uid": "1075"
+    },
+    {
+      "name": "Echo vorhanden",
+      "position": [
+        455,
+        183,
+        220,
+        44
+      ],
+      "uid": "1076"
+    },
+    {
+      "name": "Teach-Taste gedrueckt",
+      "position": [
+        455,
+        241,
+        220,
+        44
+      ],
+      "uid": "1077"
+    },
+    {
+      "name": "Messoffset [mm] - Beispiel",
+      "position": [
+        455,
+        299,
+        220,
+        44
+      ],
+      "uid": "1078"
+    },
+    {
+      "name": "Rauschamplitude [mm] - Beispiel",
+      "position": [
+        455,
+        357,
+        220,
+        44
+      ],
+      "uid": "1079"
+    },
+    {
+      "name": "Schalthysterese [mm] - Beispiel",
+      "position": [
+        455,
+        415,
+        220,
+        44
+      ],
+      "uid": "1080"
+    },
+    {
+      "name": "Rausch-Startwert [1..2147483646]",
+      "position": [
+        455,
+        473,
+        220,
+        44
+      ],
+      "uid": "1081"
+    },
+    {
+      "name": "Messung eingeschaltet",
+      "position": [
+        28,
+        610,
+        185,
+        44
+      ],
+      "uid": "1099"
+    },
+    {
+      "name": "Strom [mA]",
+      "position": [
+        735,
+        125,
+        215,
+        44
+      ],
+      "uid": "1107"
+    },
+    {
+      "name": "Messgeraet [mm] - feste Skala",
+      "position": [
+        975,
+        125,
+        215,
+        44
+      ],
+      "uid": "1110"
+    },
+    {
+      "name": "OUT1 - orange",
+      "position": [
+        735,
+        183,
+        215,
+        44
+      ],
+      "uid": "1115"
+    },
+    {
+      "name": "Echo-LED",
+      "position": [
+        975,
+        183,
+        215,
+        44
+      ],
+      "uid": "1120"
+    },
+    {
+      "name": "Teach-Phase [0 / 1 / 2]",
+      "position": [
+        735,
+        241,
+        215,
+        44
+      ],
+      "uid": "1123"
+    },
+    {
+      "name": "Taste gehalten [s]",
+      "position": [
+        975,
+        241,
+        215,
+        44
+      ],
+      "uid": "1126"
+    },
+    {
+      "name": "Status-LED [Hz]",
+      "position": [
+        735,
+        299,
+        215,
+        44
+      ],
+      "uid": "1129"
+    },
+    {
+      "name": "Status-LED",
+      "position": [
+        975,
+        299,
+        215,
+        44
+      ],
+      "uid": "1134"
+    },
+    {
+      "name": "Messung angehalten - Anzeige historisch",
+      "position": [
+        455,
+        578,
+        240,
+        40
+      ],
+      "uid": "1136"
+    },
+    {
+      "name": "Signalzustand",
+      "position": [
+        735,
+        358,
+        430,
+        48
+      ],
+      "uid": "1164"
+    },
+    {
+      "name": "Schaltausgang invertiert",
+      "position": [
+        455,
+        530,
+        240,
+        40
+      ],
+      "uid": "1169"
+    },
+    {
+      "name": "Aufnahme eingeschaltet",
+      "position": [
+        28,
+        668,
+        190,
+        44
+      ],
+      "uid": "1190"
+    },
+    {
+      "name": "Neue Aufnahme",
+      "position": [
+        233,
+        668,
+        180,
+        44
+      ],
+      "uid": "1191"
+    },
+    {
+      "name": "Ungespeicherte Aufnahme verwerfen erlauben",
+      "position": [
+        28,
+        724,
+        385,
+        44
+      ],
+      "uid": "1197"
+    },
+    {
+      "name": "CSV speichern",
+      "position": [
+        455,
+        724,
+        220,
+        44
+      ],
+      "uid": "1198"
+    },
+    {
+      "name": "Neue CSV-Datei",
+      "position": [
+        455,
+        668,
+        710,
+        44
+      ],
+      "uid": "1204"
+    },
+    {
+      "name": "Pruefstand beenden",
+      "position": [
+        28,
+        782,
+        185,
+        44
+      ],
+      "uid": "1205"
+    },
+    {
+      "name": "Aufnahmestatus",
+      "position": [
+        455,
+        782,
+        710,
+        65
+      ],
+      "uid": "1308"
+    },
+    {
+      "name": "Zeilen aufgenommen",
+      "position": [
+        735,
+        600,
+        215,
+        44
+      ],
+      "uid": "1309"
+    },
+    {
+      "name": "Ungespeicherte Daten",
+      "position": [
+        975,
+        600,
+        215,
+        44
+      ],
+      "uid": "1310"
+    },
+    {
+      "name": "CSV-Fehlercode",
+      "position": [
+        233,
+        782,
+        180,
+        44
+      ],
+      "uid": "1311"
+    },
+    {
+      "name": "Stromverlauf [mA] - 20 ms je Punkt",
+      "position": [
+        735,
+        420,
+        430,
+        165
+      ],
+      "uid": "1314"
+    },
+    {
+      "name": "Grafikfehlercode",
+      "position": [
+        28,
+        860,
+        180,
+        44
+      ],
+      "uid": "1319"
+    },
+    {
+      "name": "Bewegungsparameter gueltig",
+      "position": [
+        233,
+        610,
+        180,
+        44
+      ],
+      "uid": "1320"
+    }
+  ],
+  "width": 1210,
+  "height": 880
+}

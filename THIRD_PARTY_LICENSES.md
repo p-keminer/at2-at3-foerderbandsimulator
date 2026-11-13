@@ -36,14 +36,31 @@ SOFTWARE.
 
 ## Abgrenzung
 
-Die [Projektlizenz](LICENSE) betrifft den eigenen Simulatorcode und die eigene
-Dokumentation. Hochschulunterlagen, Kurs-Screenshots, Fotos, Schaltbilder,
+Die [Projektlizenz](LICENSE) betrifft den eigenen Simulatorcode, die selbst erstellten
+LabVIEW-VIs/Modellquellen, Übungsprojektierungen und die eigene Dokumentation. Hochschulunterlagen, Kurs-Screenshots, Fotos, Schaltbilder,
 originale Hochschul-TIA-Vorlagen, Siemens-Installationsdateien, SDK-DLLs und Lizenzdaten
 werden nicht mitgeliefert. Unter `tia/` liegen eigene rekonstruierte Übungsprojekte
 und eine vollständige Kopie des eigenen Referenzprojekts. Darin enthaltene
 projektinterne Fremdgrafiken (insbesondere das Foto der Fahrbandstrecke) erhalten
 durch die Projektlizenz keine neue Lizenz; die Rechte verbleiben beim jeweiligen
 Rechteinhaber.
+
+Die AT-1B-Erweiterung benötigt eine eigene LabVIEW-Installation. LabVIEW, PACTware,
+VEGA-DTMs und Siemens-Produkte werden weder installiert noch als Herstellerbibliotheken
+mitgeliefert. Die PW6-Datei enthält einen eigenen Offline-Projektaufbau, keine Geräte-DTM-
+Software oder Geräteemulation. Native TIA-Archive enthalten Projekt- und vom Engineering
+erzeugte Daten; daraus entsteht keine neue Lizenz an Herstellerkomponenten. Die Nutzung
+der jeweiligen Herstellerprogramme richtet sich nach deren Lizenzbedingungen.
+LabVIEW ist eine Bezeichnung von NI / Emerson; PACTware und VEGA-Gerätenamen gehören
+den jeweiligen Rechteinhabern.
+
+The AT-1B extension requires a separate LabVIEW installation. LabVIEW, PACTware,
+VEGA DTMs and Siemens products are not bundled or installed by this repository.
+The PW6 file is a custom offline project, not device-DTM software or an emulator.
+Native TIA archives contain project and engineering-generated data; the project
+license grants no new rights to vendor components. Vendor software remains subject
+to its own licence terms. LabVIEW is an NI / Emerson mark; PACTware and VEGA device
+names belong to their respective owners.
 
 Das .NET-SDK und die .NET-Framework-Referenzpakete werden nur zum Bauen benötigt.
 Sie liegen in ignorierten Ordnern und gehören nicht zum portablen Simulatorpaket. Die

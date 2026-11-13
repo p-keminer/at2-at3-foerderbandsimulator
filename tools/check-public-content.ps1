@@ -3,6 +3,7 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location -LiteralPath $root
 try {
+    & (Join-Path $PSScriptRoot 'check-extensions.ps1')
     # Inspect Git's actual publication candidates, including forcibly added ignored files.
     $files = @(& git -c core.quotepath=false ls-files --cached --others --exclude-standard | Sort-Object -Unique)
     if ($LASTEXITCODE -ne 0 -or $files.Count -eq 0) { throw 'Kein prüfbarer Git-Arbeitsstand.' }
@@ -11,9 +12,15 @@ try {
     }
     $violations = [Collections.Generic.List[string]]::new()
     $tiaManifest = Get-Content -LiteralPath (Join-Path $root 'tia\manifest.json') -Raw | ConvertFrom-Json
-    $approvedProjects = @('AT2_Start_Uebung_Originalstand.zap18','AT3_Start_Uebung_Originalstand.zap18','AT2_AT3_Referenzprojekt.zip')
+    $approvedProjects = @('AT2_Start_Uebung_Originalstand.zap18','AT3_Start_Uebung_Originalstand.zap18','AT2_AT3_Referenzprojekt.zip','AT4B_Start_Uebung_Nachbildung_3AN02.zap18','AT4B_Technikpruefung_20261113.zap18')
+    $extensionManifest = Get-Content -LiteralPath (Join-Path $root 'extensions\manifest.json') -Raw | ConvertFrom-Json
+    $documentation = @($files | Where-Object { $_ -match '(?i)\.md$' -or $_ -eq 'LICENSE' } | Sort-Object)
+    if (@(Compare-Object $documentation @('ANLEITUNG.md','LICENSE','README.md','THIRD_PARTY_LICENSES.md')).Count) {
+        throw 'Es sind ausschließlich README, Anleitung und die beiden bestehenden Lizenzdateien zur Dokumentation vorgesehen.'
+    }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     foreach ($relative in $files) {
+        if ($extensionManifest.files.file -contains $relative) { continue } # Exact allowlist, native signatures and hashes checked above.
         if ($relative.StartsWith('tia/') -and $approvedProjects -contains $relative.Substring(4)) {
             $projectPath = Join-Path $root $relative
             $entry = @($tiaManifest.projects | Where-Object { $_.file -eq $relative.Substring(4) })
@@ -32,7 +39,7 @@ try {
             continue
         }
         if ($relative -match '(?i)(^|/)(references|artifacts|output|tmp|text|logs|\.tools|\.packages|bin|obj)(/|$)' -or
-            $relative -match '(?i)\.(dll|exe|msi|pdf|zip|7z|pfx|p12|pem|key|ap18|zap18)$' -or
+            $relative -match '(?i)\.(dll|exe|msi|pdf|zip|7z|pfx|p12|pem|key|ap18|zap18|vi|pw6)$' -or
             $relative -match '(?i)(^|/)\.env($|\.)|\.local\.json$') {
             $violations.Add("Nicht zur Veröffentlichung vorgesehen: $relative"); continue
         }

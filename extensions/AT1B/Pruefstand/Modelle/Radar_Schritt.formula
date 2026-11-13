@@ -1,0 +1,35 @@
+float64 dt,d,missing,q,lin,z,current,cp,cl,alpha;
+int32 quality,sensorOK,controllerOK,i;
+missing=sqrt(-1.0); dt=p[0]; quality=0;
+if(p[10]>0 && s[4]==0){
+  if(abs(p[7]-p[8])>0.000001 && p[7]>=0 && p[8]>=0 && p[6]>=0 && p[6]<=600 && p[9]>=0 && p[9]<=1){
+    s[8]=p[6]; s[9]=p[7]; s[10]=p[8]; s[11]=p[9]; s[2]=1; s[6]=0; s[1]=0;
+  } else {s[6]=1;}
+}
+if(p[19]>0 && s[5]==0){
+  if(p[12]>p[11] && p[11]>=0 && p[12]<=30 && p[13]>=0 && p[13]<=1 && abs(p[15]-p[14])>0.000001 && p[16]>=0 && p[17]<=100 && p[17]>=p[16] && p[18]>=0 && p[18]<=2){
+    for(i=0;i<8;i++){s[12+i]=p[11+i];} s[3]=1; s[6]=0;
+  } else {s[6]=2;}
+}
+s[4]=(p[10]>0); s[5]=(p[19]>0);
+if(s[2]==0){quality=1;} if(s[2]>0 && s[3]==0){quality=2;}
+if(p[3]==0){quality=3;} if(p[4]==0){quality=4;}
+if(dt<=0 || dt>0.25 || p[1]<=0 || p[2]<0 || p[2]>p[1] || abs(p[5])>0.1){quality=9;}
+for(i=0;i<8;i++){y[i]=missing;} y[8]=0;
+if(quality!=9){s[7]=s[7]+dt;}
+sensorOK=(s[2]>0 && p[3]>0 && p[4]>0 && quality!=9);
+if(sensorOK){
+  d=p[1]-p[2]+p[5];
+  if(s[1]==0){s[0]=d; s[1]=1;} else {alpha=1; if(s[8]>0){alpha=1-exp(-dt/s[8]);} s[0]=s[0]+alpha*(d-s[0]);}
+  q=(s[0]-s[9])/(s[10]-s[9]); if(q<0){q=0;} if(q>1){q=1;} lin=q;
+  if(s[11]>0){z=1-2*q; lin=(acos(z)-z*sqrt(1-z*z))/3.141592653589793;}
+  current=4+16*lin; y[0]=s[0]; y[1]=100*q; y[2]=100*lin; y[3]=current; y[7]=p[2];
+  if(s[3]>0){
+    cp=(current-s[12])/(s[13]-s[12]); if(cp<0){cp=0;} if(cp>1){cp=1;} cl=cp;
+    if(s[14]>0){z=1-2*cp; cl=(acos(z)-z*sqrt(1-z*z))/3.141592653589793;}
+    y[4]=100*cp; y[5]=100*cl; y[6]=s[15]+cl*(s[16]-s[15]);
+    if(s[19]==1){y[8]=(100*cl>=s[17] && 100*cl<=s[18]);}
+    if(s[19]==2){y[8]=(100*cl<s[17] || 100*cl>s[18]);}
+  }
+} else {s[1]=0;}
+y[9]=quality; y[10]=s[6]; y[11]=s[7];

@@ -35,5 +35,13 @@ text/
 !tia/AT2_Start_Uebung_Originalstand.zap18
 !tia/AT3_Start_Uebung_Originalstand.zap18
 !tia/AT2_AT3_Referenzprojekt.zip
+!tia/AT4B_Start_Uebung_Nachbildung_3AN02.zap18
+!tia/AT4B_Technikpruefung_20261113.zap18
+*.vi
+*.PW6
+!extensions/AT1B/Pruefstand/*.vi
+!extensions/AT1B/Pruefstand/Modelle/*.vi
+!extensions/AT1B/Pruefstand/SubVIs/*.vi
+!extensions/AT1B/PACTware/AT1B_Radar_Offline.PW6
 # Portable personal settings stay on the user's machine.
 /profiles/

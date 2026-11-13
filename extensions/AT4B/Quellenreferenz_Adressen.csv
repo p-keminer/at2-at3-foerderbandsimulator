@@ -1,0 +1,10 @@
+﻿Name_laut_Abbildung;Datentyp;Adresse_laut_Abbildung;Quelle;Einordnung
+ADD;Bool;%M0.0;AT4B_HMI_rev1 (1).pdf, Seite 9, Standard-Variablentabelle;"Nur Quellenreferenz; nicht in Startprojekt importiert"
+Q1;Bool;%Q0.1;AT4B_HMI_rev1 (1).pdf, Seite 9, Standard-Variablentabelle;"Nur Quellenreferenz; nicht in Startprojekt importiert; Funktion von Q1 nicht erläutert"
+MUL;Bool;%M0.1;AT4B_HMI_rev1 (1).pdf, Seite 9, Standard-Variablentabelle;"Nur Quellenreferenz; nicht in Startprojekt importiert"
+DIV;Bool;%M0.2;AT4B_HMI_rev1 (1).pdf, Seite 9, Standard-Variablentabelle;"Nur Quellenreferenz; nicht in Startprojekt importiert"
+SUB;Bool;%M0.3;AT4B_HMI_rev1 (1).pdf, Seite 9, Standard-Variablentabelle;"Nur Quellenreferenz; nicht in Startprojekt importiert"
+Eingabe_1;LReal;%M2.0;AT4B_HMI_rev1 (1).pdf, Seite 9, Standard-Variablentabelle;"Nur Quellenreferenz; nicht in Startprojekt importiert"
+Eingabe_2;LReal;%M10.0;AT4B_HMI_rev1 (1).pdf, Seite 9, Standard-Variablentabelle;"Nur Quellenreferenz; nicht in Startprojekt importiert"
+Ausgabe;LReal;%M18.0;AT4B_HMI_rev1 (1).pdf, Seite 9, Standard-Variablentabelle;"Nur Quellenreferenz; nicht in Startprojekt importiert"
+Löschen(1);Bool;%M26.0;AT4B_HMI_rev1 (1).pdf, Seite 9, Standard-Variablentabelle;"Nur Quellenreferenz; nicht in Startprojekt importiert"
